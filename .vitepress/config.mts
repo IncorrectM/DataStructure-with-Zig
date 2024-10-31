@@ -2,6 +2,7 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+  base: 'DataStructure-with-Zig',
   title: "Data Structure with Zig",
   description: "Learning Zig by writing data structures.",
   themeConfig: {
