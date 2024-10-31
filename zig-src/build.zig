@@ -38,6 +38,30 @@ const chapters = [_]Chapter{
         .num = 0,
         .filename = "00_introduction.zig",
     },
+    Chapter{
+        .num = 1,
+        .filename = "01_zig_basics.zig",
+    },
+    Chapter{
+        .num = 2,
+        .filename = "02_array.zig",
+    },
+    Chapter{
+        .num = 3,
+        .filename = "03_linked_list.zig",
+    },
+    Chapter{
+        .num = 4,
+        .filename = "04_stack.zig",
+    },
+    Chapter{
+        .num = 5,
+        .filename = "05_queue.zig",
+    },
+    Chapter{
+        .num = 6,
+        .filename = "06_hash_table.zig",
+    },
 };
 
 pub fn build(b: *std.Build) void {
@@ -45,7 +69,7 @@ pub fn build(b: *std.Build) void {
     b.top_level_steps = .{};
 
     // create compiler options
-    const chapno = b.option(usize, "section", "Select which chapter's code to execute.");
+    const chapno = b.option(usize, "chapter", "Select which chapter's code to execute.");
     if (chapno) |n| {
         if (n >= chapters.len) {
             print("Unkown chapter num {d}.\n", .{n});
