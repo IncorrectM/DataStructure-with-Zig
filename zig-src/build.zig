@@ -155,7 +155,7 @@ const DSwZStep = struct {
             });
         };
         if (result.stdout.len != 0) {
-            print("$stdout:\n{s}\n$stderr:\n{s}\n", .{ result.stdout, result.stderr });
+            print("$stdout:\n{s}\n", .{result.stdout});
         } else {
             print("$stdout returns nothing.\n", .{});
         }
