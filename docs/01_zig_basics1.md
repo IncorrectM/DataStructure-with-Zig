@@ -1,8 +1,4 @@
 
-
-
-
-
 # Zig 基础
 
 我们先来简要的认识一下Zig语言。放心，我们不会走的很深。
@@ -67,19 +63,16 @@ Hello Zig! from stderr
 
 数组在 Zig 中是一种基本的数据结构，表示为固定大小的同类型元素集合。数组在定义时需要指定长度，长度在编译时就需要确定。
 
-下面的代码定义了一个数组，并以两种形式打印：
+下面的代码定义了
 
 ```zig
 const message = [_]u8{ 'h', 'e', 'l', 'l', 'o' };
-std.debug.print("{s}\n", .{message});   // 打印为字符创
-std.debug.print("{d}\n", .{message});   // 打印为数字
+std.debug.print("{s}\n", .{message});
 ```
 
 ```shell
 $stdout returns nothing.
-$stderr:
-hello
-{ 104, 101, 108, 108, 111 }
+$stderr:hello
 
 ```
 
