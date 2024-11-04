@@ -131,6 +131,8 @@ class MarkdownPreprocesser:
                             result += '```'
                     else:
                         print('Not a zig block, skipping.')
+                else:
+                    result += '`'
             else:
                 result += c
         return result

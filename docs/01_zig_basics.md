@@ -25,10 +25,10 @@ Hello Zig! from stderr
 这里我们进行约定文中的代码都由两个代码块组成：第一个代码块表示被执行的程序;第二个代码块表示执行的结果。
 
 对于执行的结果，所有由$开头的行都是我们添加的说明性文字，其他行为程序的真实输出。
-以上面的结果为例，$stdout returns nothing.是我们添加的说明性文字，说明标准输出没有输出任何东西;$stderr:也是我们添加的说明性文字，表示从下一行开始为标准错误的输出。最后Hello Zig! from stderr是程序真正的输出。
+以上面的结果为例，`$stdout returns nothing.`是我们添加的说明性文字，说明标准输出没有输出任何东西;`$stderr:`也是我们添加的说明性文字，表示从下一行开始为标准错误的输出。最后`Hello Zig! from stderr`是程序真正的输出。
 
 现在对上面的代码进行说明。
-第一行的const std = @import("std");意为引入标准库，将标准库赋值给常量std，让我们详细看一下各个单词。
+第一行的`const std = @import("std");`意为引入标准库，将标准库赋值给常量`std`，让我们详细看一下各个单词。
 
 1. const：声明一个常量;
 2. std：常量的名字，符合Zig标识符的命名规则（我们会在后面讨论这个）;
@@ -36,13 +36,13 @@ Hello Zig! from stderr
 4. @import("std")：引入名为"std"的库，@import()是一个内置函数(builtin function)，我们将在后面讨论这个。
 5. ;：zig语句总是以一个;为结尾。
 
-紧跟着是pub fn main() !void {}，这个语句声明了一个特殊的函数main，这是一个zig可执行文件的入口。我们将在后面讨论函数的声明。
+紧跟着是`pub fn main() !void {}`，这个语句声明了一个特殊的函数main，这是一个zig可执行文件的入口。我们将在后面讨论函数的声明。
 
-在函数体中，我们执行了std.debug.print("Hello Zig! from stderr\n", .{});，这个语句调用了std.debug.print()这个函数，向标准错误输出了一个字符串。
+在函数体中，我们执行了`std.debug.print("Hello Zig! from stderr\n", .{});`，这个语句调用了std.debug.print()这个函数，向标准错误输出了一个字符串。
 
-你可以创建一个名为hello_world.zig的文件，然后输入上面的代码内容，在通过zig run hello_world.zig来运行上面的代码。
+你可以创建一个名为`hello_world.zig`的文件，然后输入上面的代码内容，再通过`zig run hello_world.zig`来运行上面的代码。
 
-你可以修改Hello Zig! from stderr\n，然后重新运行，看看发生了什么。
+你可以修改`Hello Zig! from stderr\n`，然后重新运行，看看发生了什么。
 
 ## 基础数据类型
 
@@ -106,13 +106,13 @@ $stderr:
 
 我们稍微解释一下上面的语句吧。
 
-1. var i: usize = 0;：声明一个名为i的变量，并为其赋值0;
-2. while(i < 10) {}：当i小于10时，执行{}内的语句；
-3. std.debug.print("{d},", .{i});：打印i；
-4. i += 1;：等价于i = i + 1;，也就是将i加上1，然后赋值给i；
-5. std.debug.print("\n", .{});：打印一个换行符；
+1. `var i: usize = 0;`：声明一个名为`i`的变量，并为其赋值0;
+2. `while(i < 10) {}`：当`i`小于10时，执行`{}`内的语句；
+3. `std.debug.print("{d},", .{i});`：打印i；
+4. `i += 1;`：等价于`i = i + 1;`，也就是将i加上1，然后赋值给i；
+5. `std.debug.print("\n", .{});`：打印一个换行符；
 
-事实上，在Zig中，我们有更方便的方法，我们可以将i += 1移动到一个更加神秘的地方。
+事实上，在Zig中，我们有更方便的方法，我们可以将`i += 1`移动到一个更加神秘的地方。
 
 ```zig
 var i: usize = 0;
