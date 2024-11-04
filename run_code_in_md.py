@@ -35,14 +35,12 @@ pub fn main() !void {{
         else:
             result_str += '$stdout:\n'
             result_str += result.stdout
-            result_str += '\n'
         
         if result.stderr == '':
             result_str += '$stderr returns nothing.\n'
         else:
             result_str += '$stderr:\n'
             result_str += result.stderr
-            result_str += '\n'
         
         print(result_str)
         return result_str
@@ -84,7 +82,7 @@ class MarkdownPreprocesser:
             return True
         return False
 
-    def preprocess(self):
+    def preprocess(self) -> str:
         result = ''
         while(not self.is_at_end()):
             ci, c = self.advance()
@@ -156,7 +154,7 @@ def main():
         source = f.read()
 
     prepocessor = MarkdownPreprocesser(source)
-    result = prepocessor.preprocess()
+    result = prepocessor.preprocess().strip()
 
     print(f'Save to {pathlib.Path(output).absolute()}')
     with open(output, 'w+') as f:

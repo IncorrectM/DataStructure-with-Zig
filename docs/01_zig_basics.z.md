@@ -1,3 +1,8 @@
+
+
+
+
+
 # Zig 基础
 
 我们先来简要的认识一下Zig语言。放心，我们不会走的很深。
@@ -14,7 +19,7 @@ const std = @import("std");
 pub fn main() !void {
     std.debug.print("Hello Zig! from stderr\n", .{});
 }
-```
+```-skip
 
 ```shell
 $stdout returns nothing.
@@ -70,13 +75,6 @@ std.debug.print("{s}\n", .{message});   // 打印为字符创
 std.debug.print("{d}\n", .{message});   // 打印为数字
 ```
 
-```shell
-$stdout returns nothing.
-$stderr:
-hello
-{ 104, 101, 108, 108, 111 }
-```
-
 事实上，Zig语言中，字符串也是以u8数组的形式存储的。
 
 ## 条件语句
@@ -98,21 +96,15 @@ while (i < 10) {
 std.debug.print("\n", .{});
 ```
 
-```shell
-$stdout returns nothing.
-$stderr:
-0,1,2,3,4,5,6,7,8,9,
-```
-
 我们稍微解释一下上面的语句吧。
 
-1. var i: usize = 0;：声明一个名为i的变量，并为其赋值0;
-2. while(i < 10) {}：当i小于10时，执行{}内的语句；
-3. std.debug.print("{d},", .{i});：打印i；
-4. i += 1;：等价于i = i + 1;，也就是将i加上1，然后赋值给i；
-5. std.debug.print("\n", .{});：打印一个换行符；
+1. `var i: usize = 0;`：声明一个名为`i`的变量，并为其赋值0;
+2. `while(i < 10) {}`：当`i`小于10时，执行`{}`内的语句；
+3. `std.debug.print("{d},", .{i});`：打印i；
+4. `i += 1;`：等价于`i = i + 1;`，也就是将i加上1，然后赋值给i；
+5. `std.debug.print("\n", .{});`：打印一个换行符；
 
-事实上，在Zig中，我们有更方便的方法，我们可以将i += 1移动到一个更加神秘的地方。
+事实上，在Zig中，我们有更方便的方法，我们可以将`i += 1`移动到一个更加神秘的地方。
 
 ```zig
 var i: usize = 0;
@@ -121,12 +113,6 @@ while (i < 10) : (i += 1) {
     std.debug.print("{d},", .{i});
 }
 std.debug.print("\n", .{});
-```
-
-```shell
-$stdout returns nothing.
-$stderr:
-0,1,2,3,4,5,6,7,8,9,
 ```
 
 可以看到，这两个代码段输出的结果是一样的。我们一般使用第二种。
