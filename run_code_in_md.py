@@ -4,7 +4,7 @@ import sys
 import subprocess
 import shutil
 
-def run_zig(code: str) -> str:
+def run_zig(code: str, allow_cache=True) -> str:
     zig = f'''
 const std = @import("std");
 
@@ -15,9 +15,22 @@ pub fn main() !void {{
     tmp = pathlib.Path('./tmp')
     if not tmp.exists():
         tmp.mkdir()
+        
+    cache = pathlib.Path('./tmp/cache')
+    if not cache.exists():
+        cache.mkdir()
     
     suffix = hashlib.md5(code.encode()).hexdigest()[0:5]
     tmp_zig_file = pathlib.Path(f'./tmp/tmp-{suffix}.zig')
+    tmp_zig_cache = pathlib.Path(f'./tmp/cache/tmp-{suffix}.txt')
+    
+    if allow_cache and tmp_zig_file.exists() and tmp_zig_cache.exists():
+        # read cache
+        print(f'Cache found {tmp_zig_cache.absolute()}.')
+        with open(tmp_zig_cache, 'r+') as f:
+            return f.read()
+    
+    # execute code
     with open(tmp_zig_file, 'w+') as f:
         f.write(zig)
     print(f'Temporary Zig file saved to {tmp_zig_file.absolute()}.')
@@ -42,6 +55,12 @@ pub fn main() !void {{
             result_str += '$stderr:\n'
             result_str += result.stderr
         
+        # save cache
+        if allow_cache:
+            with open(tmp_zig_cache, 'w+') as f:
+                print(f'Result cached to {tmp_zig_cache.absolute()}')
+                f.write(result_str)
+        
         print(result_str)
         return result_str
     
@@ -52,9 +71,10 @@ pub fn main() !void {{
     
 
 class MarkdownPreprocesser:
-    def __init__(self, source: str):
+    def __init__(self, source: str, allow_cache: bool = True):
         self.line = 1
         self.source = source
+        self.allow_cache = allow_cache
         self.current = (-1, source[0] if len(source) > 0 else None)
 
     def is_at_end(self):
@@ -124,7 +144,7 @@ class MarkdownPreprocesser:
                             # result += '-skip' # use this in debugging
                         
                         if not skip:
-                            program_result = run_zig(code)
+                            program_result = run_zig(code, allow_cache=self.allow_cache)
                             result += '\n```shell\n'
                             # result += code
                             result += program_result
@@ -141,7 +161,7 @@ class MarkdownPreprocesser:
 def main():
     args = sys.argv
     if len(args) <= 2:
-        print('Usage: uv run main.py <filename> <output>')
+        print('Usage: uv run main.py <filename> <output> [disableCache]')
         exit(64)
     
     input_file = pathlib.Path(args[1])
@@ -154,8 +174,13 @@ def main():
     
     with open(input_file, 'r+') as f:
         source = f.read()
+    
+    allow_cache = True
+    if len(args) >= 4:
+        if 'disableCache' in args:
+            allow_cache = False
 
-    prepocessor = MarkdownPreprocesser(source)
+    prepocessor = MarkdownPreprocesser(source, allow_cache=allow_cache)
     result = prepocessor.preprocess().strip()
 
     print(f'Save to {pathlib.Path(output).absolute()}')
