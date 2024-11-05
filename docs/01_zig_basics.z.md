@@ -75,6 +75,28 @@ std.debug.print("{d}\n", .{message});   // 打印为数字
 
 ## 条件语句
 
+前面我们提到了布尔值，条件语句与布尔值息息相关。顾名思义，条件语句是用来判断一个条件的：
+
+```zig
+const a: u32 = 42;
+const b: u32 = 42;
+if (a > b) {
+    std.debug.print("{d} is greater than {d}.\n", .{ a, b });
+} else if (a == b) {
+    std.debug.print("{d} equals {d}.\n", .{ a, b });
+} else {
+    std.debug.print("{d} is lesser than {d}.\n", .{ a, b });
+}
+```
+
+这里我们看到了3个未曾见过的语句：
+
+1. `if (a > b) {}`：最基本的条件语句，括号中的是条件，花括号中的是条件语句的“体”。当条件为true的时候，执行“体”里的语句；
+2. `else if (a == b) {}`： 附加的可选的语句，只有在if语句的条件为false的时候才会执行到这，除去前面的else，其他的基本和if语句相同；`else if`可以有很多个；
+3. `else {}`：另一个附加的可选的语句，只有在前面的`if`和`else if`都为false时才会执行它的“体”里的语句。
+
+通过这些条件语句，我们可以使程序更加灵活。
+
 ## 循环语句
 
 我们在这里简单介绍两个基础的循环语法：for循环和while循环。

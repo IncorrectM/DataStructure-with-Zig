@@ -10,6 +10,16 @@ pub fn main() !void {
     const stderr = std.io.getStdErr();
     _ = try stderr.write("Hello Zig! from stderr again\n");
 
+    const a: u32 = 42;
+    const b: u32 = 42;
+    if (a > b) {
+        std.debug.print("{d} is greater than {d}.\n", .{ a, b });
+    } else if (a == b) {
+        std.debug.print("{d} equals {d}.\n", .{ a, b });
+    } else {
+        std.debug.print("{d} is lesser than {d}.\n", .{ a, b });
+    }
+
     var i: usize = 0;
     while (i < 10) {
         std.debug.print("{d},", .{i});
