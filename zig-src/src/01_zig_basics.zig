@@ -53,4 +53,23 @@ pub fn main() !void {
     for (someNumers, someEvenNumers, 0..) |odd, even, index| {
         std.debug.print("{d}: {d} and {d}\n", .{ index, odd, even });
     }
+
+    std.debug.print("{}, {}, {}, {}, {}\n", .{ isPrime(2), isPrime(3), isPrime(4), isPrime(100), isPrime(101) });
+}
+
+/// 判断一个数是不是质数
+pub fn isPrime(num: u128) bool {
+    // 质数是除了1和它本身外，没有其他因数的自然数
+    if (num <= 1) {
+        return false;
+    }
+    const bound = @as(usize, @intFromFloat(@sqrt(@as(f64, @floatFromInt(num)))));
+    var i: usize = 2;
+    while (i <= bound) : (i += 1) {
+        if (num % i == 0) {
+            return false;
+        }
+    } else {
+        return true;
+    }
 }

@@ -188,6 +188,82 @@ for (someNumbers, someEvenNumbers, 0..) |odd, even, index| {
 
 ## 函数
 
+让我们用前面讲的东西实现一个`函数`吧！
+
+你可以把`函数`视作一个菜谱，每次你想吃菜的时候，只要准备好原材料（`输入`），拿出菜谱，按照菜谱做就可以得到一道好菜（`输出`）。
+
+在下面的示例里，我们定义了一个函数，用来判断给定的数是不是质数：
+
+```zig
+/// 判断一个数是不是质数
+pub fn isPrime(num: u128) bool {
+    // 质数是除了1和它本身外，没有其他因数的自然数
+    if (num <= 1) {
+        return false;
+    }
+    const bound = @as(usize, @intFromFloat(@sqrt(@as(f64, @floatFromInt(num)))));
+    var i: usize = 2;
+    while (i <= bound) : (i += 1) {
+        if (num % i == 0) {
+            return false;
+        }
+    } else {
+        return true;
+    }
+}
+```-skip
+
+这里我们来看一下这几个特殊的函数：`@as`,`@intFromFloat`,`@sqrt`,`@floatFromInt`，这些函数和前面见过的`@import`一样，是编译器提供的内建函数。
+
+这一长串的符合函数调用可能比较混乱，我们一个一个看，注意，下面的列表中，所有的`^`都表示上一个函数的结果：
+
+1. `@floatFromInt(num)`将u128类型的num转换为一个浮点数，但这里并没有指定转换为哪种浮点数；
+2. `@as(f64, ^)`明确地将上一个函数的结果转换为f64类型；
+3. `@sqrt(^)`对上一个函数的结果开平方，这里的输入必须是浮点数，所以我们在前面将num转换为浮点数。Zig不会偷偷地改变你的数据的类型；
+4. `@as(usize, @intFromFloat(^))`和1，2一样，不过这次是转换为usize类型的整数；
+
+随后，我们一个数一个数试过来，看看有没有其他因数，如果有就返回false，没有就返回true。
+
+:::tip
+诶？怎么`while`语句也有`else`？
+
+如果你使用过Python语言，可能会比较眼熟。这里的`else`会在正常退出while时被执行，也就是当`i > bound`时执行。但如果出于某种原因中间退出了，就不会执行。
+
+下面的代码就不会执行，因为通过`break`退出循环不会出发`else`里的语句，就会导致函数没有返回值。
+```zig
+/// 判断一个数是不是质数
+pub fn isPrime(num: u128) bool {
+    // 质数是除了1和它本身外，没有其他因数的自然数
+    if (num <= 1) {
+        return false;
+    }
+    const bound = @as(usize, @intFromFloat(@sqrt(@as(f64, @floatFromInt(num)))));
+    var i: usize = 2;
+    while (i <= bound) : (i += 1) {
+        if (num % i == 0) {
+            return false;
+        }
+        // 👇这里会导致函数没有正确的返回值，无法通过编译器的检查
+        break;
+    } else {
+        return true;
+    }
+}
+```-skip
+:::
+
+我们可以调用这个函数。
+
+```zig
+std.debug.print("{}, {}, {}, {}, {}\n", .{ isPrime(2), isPrime(3), isPrime(4), isPrime(100), isPrime(101) });
+```-skip
+
+```ansi
+$stdout returns nothing.
+$stderr:
+true, true, false, false, true
+```
+
 ## 一个真正的Hello World
 
 Zig语言还有一些其他特性，我们将在实现数据结构的过程中一一讨论。
