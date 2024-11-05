@@ -70,7 +70,7 @@ std.debug.print("{s}\n", .{message});   // 打印为字符串
 std.debug.print("{d}\n", .{message});   // 打印为数字
 ```
 
-```output
+```shell
 $stdout returns nothing.
 $stderr:
 hello
@@ -98,7 +98,7 @@ while (i < 10) {
 std.debug.print("\n", .{});
 ```
 
-```output
+```shell
 $stdout returns nothing.
 $stderr:
 0,1,2,3,4,5,6,7,8,9,
@@ -123,7 +123,7 @@ while (i < 10) : (i += 1) {
 std.debug.print("\n", .{});
 ```
 
-```output
+```shell
 $stdout returns nothing.
 $stderr:
 0,1,2,3,4,5,6,7,8,9,
@@ -142,7 +142,7 @@ for (0..10) |value| {
 std.debug.print("\n", .{});
 ```
 
-```output
+```shell
 $stdout returns nothing.
 $stderr:
 0,1,2,3,4,5,6,7,8,9,
@@ -160,7 +160,7 @@ for (someNumbers) |value| {
 std.debug.print("\n", .{});
 ```
 
-```output
+```shell
 $stdout returns nothing.
 $stderr:
 1,3,5,7,9,11,13,15,17,19,21,
@@ -178,7 +178,7 @@ for (someNumbers, 0..) |value, index| {
 std.debug.print("\n", .{});
 ```
 
-```output
+```shell
 $stdout returns nothing.
 $stderr:
 0: 1, 1: 3, 2: 5, 3: 7, 4: 9, 5: 11, 6: 13, 7: 15, 8: 17, 9: 19, 10: 21, 
@@ -198,7 +198,7 @@ for (someNumbers, someEvenNumbers, 0..) |odd, even, index| {
 }
 ```
 
-```output
+```shell
 $stdout returns nothing.
 $stderr:
 0: 1 and 2
