@@ -66,11 +66,11 @@ Hello Zig! from stderr
 
 ```zig
 const message = [_]u8{ 'h', 'e', 'l', 'l', 'o' };
-std.debug.print("{s}\n", .{message});   // 打印为字符创
+std.debug.print("{s}\n", .{message});   // 打印为字符串
 std.debug.print("{d}\n", .{message});   // 打印为数字
 ```
 
-```shell
+```output
 $stdout returns nothing.
 $stderr:
 hello
@@ -98,7 +98,7 @@ while (i < 10) {
 std.debug.print("\n", .{});
 ```
 
-```shell
+```output
 $stdout returns nothing.
 $stderr:
 0,1,2,3,4,5,6,7,8,9,
@@ -123,7 +123,7 @@ while (i < 10) : (i += 1) {
 std.debug.print("\n", .{});
 ```
 
-```shell
+```output
 $stdout returns nothing.
 $stderr:
 0,1,2,3,4,5,6,7,8,9,
@@ -132,6 +132,89 @@ $stderr:
 可以看到，这两个代码段输出的结果是一样的。我们一般使用第二种。
 
 ### for循环
+
+接下来让我们看看另一种循环——for循环。
+
+```zig
+for (0..10) |value| {
+    std.debug.print("{d},", .{value});
+}
+std.debug.print("\n", .{});
+```
+
+```output
+$stdout returns nothing.
+$stderr:
+0,1,2,3,4,5,6,7,8,9,
+```
+
+其他和while里是一样的，我们只需要看不一样的`for (0..10) |value| {}`：遍历`0..10`这个序列（包括0，但是不包括10），`value`表示当前迭代到哪一个数字。
+
+在这里`0..10`也可以替换为数组，例如下面的示例：
+
+```zig
+const someNumbers = [_]u8{ 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 };
+for (someNumbers) |value| {
+    std.debug.print("{d},", .{value});
+}
+std.debug.print("\n", .{});
+```
+
+```output
+$stdout returns nothing.
+$stderr:
+1,3,5,7,9,11,13,15,17,19,21,
+```
+
+在这个示例中，我们初始化了一个名为`someNumbers`的数组，并为它赋值，然后通过for循环遍历了它。
+
+这个时候你可能会想知道正在被遍历的这个数是第几个数，Zig也有遍历的方法。
+
+```zig
+const someNumbers = [_]u8{ 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 };
+for (someNumbers, 0..) |value, index| {
+    std.debug.print("{}: {d}, ", .{ index, value });
+}
+std.debug.print("\n", .{});
+```
+
+```output
+$stdout returns nothing.
+$stderr:
+0: 1, 1: 3, 2: 5, 3: 7, 4: 9, 5: 11, 6: 13, 7: 15, 8: 17, 9: 19, 10: 21, 
+```
+
+Voila!
+
+我来解释一下，这里的`0..`是一个特殊的语法，它自动生成了一个从0开始的，长度与`someNumbers`相同的，元素的类型为usize的数组。
+
+事实上，只要长度相同，Zig的for循环语句可以同时循环多个数组，看下面的示例：
+
+```zig
+const someNumbers = [_]u8{ 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 };
+const someEvenNumbers = [_]u8{ 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 };
+for (someNumbers, someEvenNumbers, 0..) |odd, even, index| {
+    std.debug.print("{d}: {d} and {d}\n", .{ index, odd, even });
+}
+```
+
+```output
+$stdout returns nothing.
+$stderr:
+0: 1 and 2
+1: 3 and 4
+2: 5 and 6
+3: 7 and 8
+4: 9 and 10
+5: 11 and 12
+6: 13 and 14
+7: 15 and 16
+8: 17 and 18
+9: 19 and 20
+10: 21 and 22
+```
+
+这里的`someNumbers`，`someEvenNumbers`和通过`0..`生成的数组具有相同的长度，所以我们可以一起遍历它们。
 
 ## 函数
 

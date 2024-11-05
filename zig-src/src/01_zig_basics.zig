@@ -27,4 +27,20 @@ pub fn main() !void {
         std.debug.print("{d},", .{value});
     }
     std.debug.print("\n", .{});
+
+    const someNumers = [_]u8{ 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 };
+    for (someNumers) |value| {
+        std.debug.print("{d},", .{value});
+    }
+    std.debug.print("\n", .{});
+
+    for (someNumers, 0..) |value, index| {
+        std.debug.print("{}: {d}, ", .{ index, value });
+    }
+    std.debug.print("\n", .{});
+
+    const someEvenNumers = [_]u8{ 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 };
+    for (someNumers, someEvenNumers, 0..) |odd, even, index| {
+        std.debug.print("{d}: {d} and {d}\n", .{ index, odd, even });
+    }
 }
