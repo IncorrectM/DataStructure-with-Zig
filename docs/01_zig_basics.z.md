@@ -8,18 +8,12 @@
 
 下面是一个最简单的Hello World程序。
 
-```zig
+```zig -singleFile
 const std = @import("std");
 
 pub fn main() !void {
     std.debug.print("Hello Zig! from stderr\n", .{});
 }
-```-skip
-
-```ansi
-$stdout returns nothing.
-$stderr:
-Hello Zig! from stderr
 ```
 
 这里我们进行约定文中的代码都由两个代码块组成：第一个代码块表示被执行的程序;第二个代码块表示执行的结果。
@@ -194,7 +188,7 @@ for (someNumbers, someEvenNumbers, 0..) |odd, even, index| {
 
 在下面的示例里，我们定义了一个函数，用来判断给定的数是不是质数：
 
-```zig
+```zig -singleFile
 /// 判断一个数是不是质数
 pub fn isPrime(num: u128) bool {
     // 质数是除了1和它本身外，没有其他因数的自然数
@@ -211,7 +205,12 @@ pub fn isPrime(num: u128) bool {
         return true;
     }
 }
-```-skip
+
+const std = @import("std");
+pub fn main() !void {
+    std.debug.print("{}, {}, {}, {}, {}\n", .{ isPrime(2), isPrime(3), isPrime(4), isPrime(100), isPrime(101) });
+}
+```
 
 这里我们来看一下这几个特殊的函数：`@as`,`@intFromFloat`,`@sqrt`,`@floatFromInt`，这些函数和前面见过的`@import`一样，是编译器提供的内建函数。
 
@@ -230,7 +229,7 @@ pub fn isPrime(num: u128) bool {
 如果你使用过Python语言，可能会比较眼熟。这里的`else`会在正常退出while时被执行，也就是当`i > bound`时执行。但如果出于某种原因中间退出了，就不会执行。
 
 下面的代码就不会执行，因为通过`break`退出循环不会出发`else`里的语句，就会导致函数没有返回值。
-```zig
+```zig -skip
 /// 判断一个数是不是质数
 pub fn isPrime(num: u128) bool {
     // 质数是除了1和它本身外，没有其他因数的自然数
@@ -249,20 +248,8 @@ pub fn isPrime(num: u128) bool {
         return true;
     }
 }
-```-skip
-:::
-
-我们可以调用这个函数。
-
-```zig
-std.debug.print("{}, {}, {}, {}, {}\n", .{ isPrime(2), isPrime(3), isPrime(4), isPrime(100), isPrime(101) });
-```-skip
-
-```ansi
-$stdout returns nothing.
-$stderr:
-true, true, false, false, true
 ```
+:::
 
 ## 一个真正的Hello World
 

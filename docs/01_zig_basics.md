@@ -14,12 +14,14 @@ const std = @import("std");
 pub fn main() !void {
     std.debug.print("Hello Zig! from stderr\n", .{});
 }
+
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 Hello Zig! from stderr
+
 ```
 
 这里我们进行约定文中的代码都由两个代码块组成：第一个代码块表示被执行的程序;第二个代码块表示执行的结果。
@@ -68,6 +70,7 @@ Hello Zig! from stderr
 const message = [_]u8{ 'h', 'e', 'l', 'l', 'o' };
 std.debug.print("{s}\n", .{message});   // 打印为字符串
 std.debug.print("{d}\n", .{message});   // 打印为数字
+
 ```
 
 ```ansi
@@ -75,6 +78,7 @@ $stdout returns nothing.
 $stderr:
 hello
 { 104, 101, 108, 108, 111 }
+
 ```
 ::: tip
 事实上，Zig语言中，字符串也是以u8数组的形式存储的。
@@ -94,12 +98,14 @@ if (a > b) {
 } else {
     std.debug.print("{d} is lesser than {d}.\n", .{ a, b });
 }
+
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 42 equals 42.
+
 ```
 
 这里我们看到了3个未曾见过的语句：
@@ -125,12 +131,14 @@ while (i < 10) {
     i += 1;
 }
 std.debug.print("\n", .{});
+
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 0,1,2,3,4,5,6,7,8,9,
+
 ```
 
 我们稍微解释一下上面的语句吧。
@@ -150,12 +158,14 @@ while (i < 10) : (i += 1) {
     std.debug.print("{d},", .{i});
 }
 std.debug.print("\n", .{});
+
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 0,1,2,3,4,5,6,7,8,9,
+
 ```
 
 可以看到，这两个代码段输出的结果是一样的。我们一般使用第二种。
@@ -169,12 +179,14 @@ for (0..10) |value| {
     std.debug.print("{d},", .{value});
 }
 std.debug.print("\n", .{});
+
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 0,1,2,3,4,5,6,7,8,9,
+
 ```
 
 其他和while里是一样的，我们只需要看不一样的`for (0..10) |value| {}`：遍历`0..10`这个序列（包括0，但是不包括10），`value`表示当前迭代到哪一个数字。
@@ -187,12 +199,14 @@ for (someNumbers) |value| {
     std.debug.print("{d},", .{value});
 }
 std.debug.print("\n", .{});
+
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 1,3,5,7,9,11,13,15,17,19,21,
+
 ```
 
 在这个示例中，我们初始化了一个名为`someNumbers`的数组，并为它赋值，然后通过for循环遍历了它。
@@ -205,12 +219,14 @@ for (someNumbers, 0..) |value, index| {
     std.debug.print("{}: {d}, ", .{ index, value });
 }
 std.debug.print("\n", .{});
+
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 0: 1, 1: 3, 2: 5, 3: 7, 4: 9, 5: 11, 6: 13, 7: 15, 8: 17, 9: 19, 10: 21, 
+
 ```
 
 Voila!
@@ -225,6 +241,7 @@ const someEvenNumbers = [_]u8{ 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 };
 for (someNumbers, someEvenNumbers, 0..) |odd, even, index| {
     std.debug.print("{d}: {d} and {d}\n", .{ index, odd, even });
 }
+
 ```
 
 ```ansi
@@ -241,6 +258,7 @@ $stderr:
 8: 17 and 18
 9: 19 and 20
 10: 21 and 22
+
 ```
 这里的`someNumbers`，`someEvenNumbers`和通过`0..`生成的数组具有相同的长度，所以我们可以一起遍历它们。
 :::
@@ -270,6 +288,19 @@ pub fn isPrime(num: u128) bool {
         return true;
     }
 }
+
+const std = @import("std");
+pub fn main() !void {
+    std.debug.print("{}, {}, {}, {}, {}\n", .{ isPrime(2), isPrime(3), isPrime(4), isPrime(100), isPrime(101) });
+}
+
+```
+
+```ansi
+$stdout returns nothing.
+$stderr:
+true, true, false, false, true
+
 ```
 
 这里我们来看一下这几个特殊的函数：`@as`,`@intFromFloat`,`@sqrt`,`@floatFromInt`，这些函数和前面见过的`@import`一样，是编译器提供的内建函数。
@@ -308,21 +339,11 @@ pub fn isPrime(num: u128) bool {
         return true;
     }
 }
+
 ```
 :::
-
-我们可以调用这个函数。
-
-```zig
-std.debug.print("{}, {}, {}, {}, {}\n", .{ isPrime(2), isPrime(3), isPrime(4), isPrime(100), isPrime(101) });
-```
-
-```ansi
-$stdout returns nothing.
-$stderr:
-true, true, false, false, true
-```
 
 ## 一个真正的Hello World
 
 Zig语言还有一些其他特性，我们将在实现数据结构的过程中一一讨论。
+
