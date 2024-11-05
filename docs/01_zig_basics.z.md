@@ -69,8 +69,9 @@ const message = [_]u8{ 'h', 'e', 'l', 'l', 'o' };
 std.debug.print("{s}\n", .{message});   // 打印为字符串
 std.debug.print("{d}\n", .{message});   // 打印为数字
 ```
-
+::: tip
 事实上，Zig语言中，字符串也是以u8数组的形式存储的。
+:::
 
 ## 条件语句
 
@@ -151,8 +152,8 @@ Voila!
 
 我来解释一下，这里的`0..`是一个特殊的语法，它自动生成了一个从0开始的，长度与`someNumbers`相同的，元素的类型为usize的数组。
 
+:::tip
 事实上，只要长度相同，Zig的for循环语句可以同时循环多个数组，看下面的示例：
-
 ```zig
 const someNumbers = [_]u8{ 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 };
 const someEvenNumbers = [_]u8{ 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 };
@@ -160,8 +161,8 @@ for (someNumbers, someEvenNumbers, 0..) |odd, even, index| {
     std.debug.print("{d}: {d} and {d}\n", .{ index, odd, even });
 }
 ```
-
 这里的`someNumbers`，`someEvenNumbers`和通过`0..`生成的数组具有相同的长度，所以我们可以一起遍历它们。
+:::
 
 ## 函数
 
