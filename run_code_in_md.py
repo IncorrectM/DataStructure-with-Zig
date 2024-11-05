@@ -145,7 +145,7 @@ class MarkdownPreprocesser:
                         
                         if not skip:
                             program_result = run_zig(code, allow_cache=self.allow_cache)
-                            result += '\n```shell\n'
+                            result += '\n```ansi\n'
                             # result += code
                             result += program_result
                             result += '```'

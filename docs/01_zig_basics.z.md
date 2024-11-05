@@ -16,7 +16,7 @@ pub fn main() !void {
 }
 ```-skip
 
-```shell
+```ansi
 $stdout returns nothing.
 $stderr:
 Hello Zig! from stderr
