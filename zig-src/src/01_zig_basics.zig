@@ -55,6 +55,9 @@ pub fn main() !void {
     }
 
     std.debug.print("{}, {}, {}, {}, {}\n", .{ isPrime(2), isPrime(3), isPrime(4), isPrime(100), isPrime(101) });
+
+    std.debug.print("{d}", .{divide(3, 2) catch unreachable});
+    _ = divide(32, 0) catch 0;
 }
 
 /// 判断一个数是不是质数
@@ -72,4 +75,12 @@ pub fn isPrime(num: u128) bool {
     } else {
         return true;
     }
+}
+
+/// retusn a / b
+pub fn divide(a: f64, b: f64) !f64 {
+    if (b == 0) {
+        return error.DividedByZero;
+    }
+    return a / b;
 }
