@@ -95,7 +95,6 @@ async function processMarkdown(filePath: string) {
             const match = line.match(/^```(zig(?: -\w+)?)/); // 匹配Zig代码块的开始
             if (match) {
                 const haveIndex = line.match(/\{.*\}/);
-                console.log(line, haveIndex);
                 let index: string | null = null;
                 if (haveIndex) {
                     index = haveIndex[0];
@@ -113,7 +112,6 @@ async function processMarkdown(filePath: string) {
             if (currentBlock) {
                 // 向result中输出zig代码块和结果代码块（如果需要的话）
                 const { type, content, line, highlightIndex } = currentBlock;
-                console.log(currentBlock);
                 if (highlightIndex) {
                     result += `\`\`\`zig ${highlightIndex}\n${currentBlock.content}\n\`\`\`\n`;
                 } else {
