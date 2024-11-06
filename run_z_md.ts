@@ -2,13 +2,22 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as childProcess from 'child_process';
 import * as crypto from 'crypto';
-import { argv } from 'bun';
 
 // 代码段信息
 interface CodeBlock {
     type: string;       // 代码块类型，例如 "zig" 或 "zig -singleFile"
     content: string;    // 代码块内容
     line: number;       // 代码块开始的行号
+    highlightIndex: string | null;  // 代码块中的高亮
+}
+
+async function ensureFileExists(path: string) {
+    try {
+        fs.accessSync(path, fs.constants.F_OK);
+    } catch (error) {
+        fs.mkdirSync(path, { recursive: true });
+        console.log(`Created ${path}.`)
+    }
 }
 
 /**
@@ -25,6 +34,10 @@ async function executeZigCode(code: string, singleFile = false): Promise<string>
         const tempFileName = `tmp-${md5Sum.substring(0, 6)}.zig`; // 使用MD5值的前6个字符作为文件名
         const tempFilePath = path.join(__dirname, '/tmp', tempFileName); // 创建临时文件路径
         const cacheFilePath = path.join(__dirname, '/tmp/cache', `tmp-${md5Sum.substring(0, 6)}.txt`); // 缓存文件路径
+        
+        // 确保路径存在
+        ensureFileExists(path.join(__dirname, '/tmp'));
+        ensureFileExists(path.join(__dirname, '/tmp/cache'));
 
         // 检查缓存文件是否存在
         if (fs.existsSync(cacheFilePath)) {
@@ -79,21 +92,33 @@ async function processMarkdown(filePath: string) {
     for (let i = 0; i < content.length; i++) {
         const line = content[i];
         if (!inCodeBlock && line.startsWith('```')) {
-            const match = line.match(/^```(zig(?: -\w+)?)(?: \{\d+\})?$/); // 匹配Zig代码块的开始
+            const match = line.match(/^```(zig(?: -\w+)?)/); // 匹配Zig代码块的开始
             if (match) {
+                const haveIndex = line.match(/\{.*\}/);
+                console.log(line, haveIndex);
+                let index: string | null = null;
+                if (haveIndex) {
+                    index = haveIndex[0];
+                }
                 inCodeBlock = true;
                 currentBlock = {
                     type: match[1],
                     content: '',
                     line: i,
+                    highlightIndex: index
                 };
             }
         } else if (inCodeBlock && line === '```') {
             inCodeBlock = false;
             if (currentBlock) {
                 // 向result中输出zig代码块和结果代码块（如果需要的话）
-                const { type, content, line } = currentBlock;
-                result += `\`\`\`zig\n${currentBlock.content}\n\`\`\`\n`;
+                const { type, content, line, highlightIndex } = currentBlock;
+                console.log(currentBlock);
+                if (highlightIndex) {
+                    result += `\`\`\`zig ${highlightIndex}\n${currentBlock.content}\n\`\`\`\n`;
+                } else {
+                    result += `\`\`\`zig\n${currentBlock.content}\n\`\`\`\n`;
+                }
                 if (type.includes('-skip')) {
                     // 不添加结果代码块
                     continue;
