@@ -9,6 +9,7 @@
   "scripts": {
     "docs:dev": "vitepress dev",
     "docs:build": "vitepress build",
-    "docs:preview": "vitepress preview"
+    "docs:preview": "vitepress preview",
+    "docz:01": "bun ./run_z_md.ts run ./docs/01_zig_basics.z.md"
   }
 }

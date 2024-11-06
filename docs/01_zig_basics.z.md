@@ -118,7 +118,7 @@ std.debug.print("\n", .{});
 
 事实上，在Zig中，我们有更方便的方法，我们可以将`i += 1`移动到一个更加神秘的地方。
 
-```zig
+```zig {3}
 var i: usize = 0;
 //               看这里👇
 while (i < 10) : (i += 1) {
@@ -156,7 +156,7 @@ std.debug.print("\n", .{});
 
 这个时候你可能会想知道正在被遍历的这个数是第几个数，Zig也有遍历的方法。
 
-```zig
+```zig {2}
 const someNumbers = [_]u8{ 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 };
 for (someNumbers, 0..) |value, index| {
     std.debug.print("{}: {d}, ", .{ index, value });
@@ -170,7 +170,7 @@ Voila!
 
 :::tip
 事实上，只要长度相同，Zig的for循环语句可以同时循环多个数组，看下面的示例：
-```zig
+```zig {3}
 const someNumbers = [_]u8{ 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 };
 const someEvenNumbers = [_]u8{ 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 };
 for (someNumbers, someEvenNumbers, 0..) |odd, even, index| {
@@ -188,7 +188,7 @@ for (someNumbers, someEvenNumbers, 0..) |odd, even, index| {
 
 在下面的示例里，我们定义了一个函数，用来判断给定的数是不是质数：
 
-```zig -singleFile
+```zig -singleFile {2}
 /// 判断一个数是不是质数
 pub fn isPrime(num: u128) bool {
     // 质数是除了1和它本身外，没有其他因数的自然数
@@ -229,7 +229,7 @@ pub fn main() !void {
 如果你使用过Python语言，可能会比较眼熟。这里的`else`会在正常退出while时被执行，也就是当`i > bound`时执行。但如果出于某种原因中间退出了，就不会执行。
 
 下面的代码就不会执行，因为通过`break`退出循环不会出发`else`里的语句，就会导致函数没有返回值。
-```zig -skip
+```zig -skip {14}
 /// 判断一个数是不是质数
 pub fn isPrime(num: u128) bool {
     // 质数是除了1和它本身外，没有其他因数的自然数
