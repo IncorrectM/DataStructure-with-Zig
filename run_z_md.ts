@@ -87,6 +87,8 @@ async function processMarkdown(filePath: string) {
     let inCodeBlock = false; // 标记是否在代码块中
     let currentBlock: CodeBlock | null = null; // 当前处理的代码块
 
+    const collectedBlocks = new Map<string, CodeBlock>();
+
     // 遍历每一行，查找代码块并立即处理
     let result = '';
     for (let i = 0; i < content.length; i++) {
@@ -94,11 +96,13 @@ async function processMarkdown(filePath: string) {
         if (!inCodeBlock && line.startsWith('```')) {
             const match = line.match(/^```(zig(?: -\w+)?)/); // 匹配Zig代码块的开始
             if (match) {
+                // 判断是否有指定高亮行的{\d}
                 const haveIndex = line.match(/\{.*\}/);
                 let index: string | null = null;
                 if (haveIndex) {
                     index = haveIndex[0];
                 }
+
                 inCodeBlock = true;
                 currentBlock = {
                     type: match[1],
@@ -106,6 +110,24 @@ async function processMarkdown(filePath: string) {
                     line: i,
                     highlightIndex: index
                 };
+
+                // 判断是否需要收集
+                const isCollect = line.match(/^```zig -collect_(\d+|\*)/);
+                if (isCollect) {
+                    const match = isCollect[0];
+                    const collectNum = match.substring(match.indexOf('_') + 1);
+                    currentBlock.type = `collect:${collectNum}`;
+                }
+
+                // 判断是否需要执行
+                const isExecute = line.match(/^```zig -execute_(\d+|\*)/);
+                if (isExecute) {
+                    const match = isExecute[0];
+                    const executeNum = match.substring(match.indexOf('_') + 1);
+                    currentBlock.type = `execute:${executeNum}`;
+                }
+            } else {
+                result += line + '\n';
             }
         } else if (inCodeBlock && line === '```') {
             inCodeBlock = false;
@@ -113,18 +135,56 @@ async function processMarkdown(filePath: string) {
                 // 向result中输出zig代码块和结果代码块（如果需要的话）
                 const { type, content, line, highlightIndex } = currentBlock;
                 if (highlightIndex) {
-                    result += `\`\`\`zig ${highlightIndex}\n${currentBlock.content}\n\`\`\`\n`;
+                    result += `\`\`\`zig ${highlightIndex}\n${currentBlock.content}\`\`\`\n`;
                 } else {
-                    result += `\`\`\`zig\n${currentBlock.content}\n\`\`\`\n`;
+                    result += `\`\`\`zig\n${currentBlock.content}\`\`\`\n`;
                 }
+
                 if (type.includes('-skip')) {
                     // 不添加结果代码块
                     continue;
+                
+                } else if (type.includes('collect:')) {
+                    // 收集代码到一块里再执行
+                    const collectNum = type.split(':')[1];
+                    const savedBlock = collectedBlocks.get(collectNum);
+                    if (savedBlock && currentBlock.line != savedBlock.line) {
+                        // 存到一块
+                        savedBlock.content += currentBlock.content;
+                    } else {
+                        collectedBlocks.set(collectNum, currentBlock);
+                    }
+                
+                } else if (type.includes('execute:')) {
+                    // 执行保存好的代码并输出
+                    const executeNum = type.split(':')[1];
+                    if (executeNum === '*') {
+                        console.error(`Connot execute public code at line ${line}.`);
+                        process.exit(-1);
+                    }
+                    const savedBlock = collectedBlocks.get(executeNum);
+                    // 公共代码块
+                    const publicBlock = collectedBlocks.get('*');
+                    if (savedBlock) {
+                        // 公共代码块总是被放置在所有代码前面
+                        const publicCode = publicBlock ? publicBlock.content : '';
+                        const output = await executeZigCode(publicCode + savedBlock.content + content,  true);
+                        result += `\n\`\`\`ansi\n${output}\`\`\`\n`;
+                        // 执行完成后就清除
+                        // TODO: 有必要吗？
+                        collectedBlocks.delete(executeNum);
+                        // 不清除公共代码块
+                    } else {
+                        console.error(`CodeBlock with execute number ${executeNum} is not saved.`);
+                        process.exit(-1);
+                    }
+                
                 } else if (type.includes('zig')) {
                     // 执行代码
                     const output = await executeZigCode(content, type.includes('-singleFile'));
-                    result += `\n\`\`\`ansi\n${output}\n\`\`\`\n`;
+                    result += `\n\`\`\`ansi\n${output}\`\`\`\n`;
                 }
+                
                 currentBlock = null;
             }
         } else if (inCodeBlock) {
