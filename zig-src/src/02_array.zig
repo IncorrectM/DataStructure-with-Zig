@@ -2,9 +2,8 @@ const std = @import("std");
 
 pub fn main() !void {
     const IntArray = SimpleArray(u64);
-    const allocator = std.heap.page_allocator;
 
-    var array = IntArray.init(allocator);
+    var array = IntArray.init(std.heap.page_allocator);
     defer array.deinit();
 
     try array.append(1);
@@ -19,6 +18,13 @@ pub fn main() !void {
         try array.append(@as(u64, value));
     }
     printArray(u64, array);
+
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const allocator = arena.allocator();
+    const a_number = try allocator.create(u32);
+    a_number.* = 100;
+    std.debug.print("We allocated {p} which stores {d}!\n", .{ a_number, a_number.* });
+    arena.deinit();
 }
 
 /// 工具函数，打印我们的数组

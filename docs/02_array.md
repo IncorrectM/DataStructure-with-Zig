@@ -23,6 +23,12 @@ std.debug.print("We allocated {p} which stores {d}!\n", .{ a_number, a_number.* 
 arena.deinit();
 ```
 
+```ansi
+$stdout returns nothing.
+$stderr:
+We allocated u32@151ed1796010 which stores 100!
+```
+
 让我们来逐行看看有什么吧！
 
 1. `var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);`：通过传入一个其他的Allocator，我们初始化了一个ArenaAllocator。ArenaAllocator会用这个分配器来实际分配内存；
@@ -39,3 +45,4 @@ arena.deinit();
 - 基础内存管理示例
 
 🚧施工中🚧
+
