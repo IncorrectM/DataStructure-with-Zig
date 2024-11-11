@@ -1,7 +1,10 @@
 const std = @import("std");
+const sturcts = @import("0201_struct.zig");
 
 pub fn main() !void {
     const IntArray = SimpleArray(u64);
+
+    sturcts.struct_main();
 
     var array = IntArray.init(std.heap.page_allocator);
     defer array.deinit();
