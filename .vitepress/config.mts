@@ -18,7 +18,7 @@ export default defineConfig({
         items: [
           { text: '关于DSwZ', link: '/docs/00_introduction' },
           { text: 'Zig基础', link: '/docs/01_zig_basics' },
-          { text: '数组Array', link: '/docs/02_array' },
+          { text: '数组列表ArrayList', link: '/docs/02_array_list' },
           { text: '链表LinkedList', link: '/docs/03_linked_list' },
           { text: '栈Stack', link: '/docs/04_stack' },
           { text: '队列Queue', link: '/docs/05_queue' },

@@ -1,4 +1,4 @@
-# Array 数组
+# ArrayList 列表
 
 ## 内存是一种资源
 
@@ -86,7 +86,45 @@ We got a point (1e0, 1.80086e0).
 
 其次，我们打印了point里存储的值。这里的`point.x`和`point.y`分别访问了两个成员，`.`叫作成员访问运算符。
 
-- 静态数组的定义与基本操作（添加、获取、修改）
+## 数组
+
+数组（Array）是一种线性数据结构，它由相同类型的数据元素组成，这些元素存储在连续的区域内，并且可以通过下标进行访问。
+
+下面的图片是一个数组示例，这个数组中存储了5个类型为i8的整型数字，因此长度为5。同时，箭头指向了第一个元素，这个元素的下标是0。
+
+![数组示例](./imgs/02/0201_Array.png)
+
+我们已经见过在Zig怎么创建和访问一样的数组：
+
+```zig
+const number = [5]i8{ 2, -1, 5, 6, 3 };
+for (number, 0..) |value, i| {
+    std.debug.print("Index={}, Value={}\n", .{ i, value });
+}
+std.debug.print("number.len={}\n", .{number.len});
+```
+
+```ansi
+$stdout returns nothing.
+$stderr:
+Index=0, Value=2
+Index=1, Value=-1
+Index=2, Value=5
+Index=3, Value=6
+Index=4, Value=3
+number.len=5
+```
+
+在大多数编程语言中，数组的长度都是固定的，必须要编译的时候就确定长度。
+
+## 变长的数组 —— 列表
+
+如果我们想要动态地调整数组长度呢？在Python中，常用的列表可以自动调整长度；在Rust中，我们可以使用向量Vec。在这里，我们使用**列表**这个称呼。
+
+::: tip
+Zig语言的标准库提供了一个列表的实现[std.ArrayList](https://ziglang.org/documentation/master/std/#std.ArrayList)，我们跟随标准库称之为列表（List）。
+:::
+
 - 动态数组的简单实现（扩容策略）
 - 基础内存管理示例
 

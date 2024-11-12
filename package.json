@@ -11,6 +11,6 @@
     "docs:build": "vitepress build",
     "docs:preview": "vitepress preview",
     "docz:01": "bun ./run_z_md.ts run ./docs/01_zig_basics.z.md",
-    "docz:02": "bun ./run_z_md.ts run ./docs/02_array.z.md"
+    "docz:02": "bun ./run_z_md.ts run ./docs/02_array_list.z.md"
   }
 }

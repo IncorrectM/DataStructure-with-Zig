@@ -2,6 +2,12 @@ const std = @import("std");
 const sturcts = @import("0201_struct.zig");
 
 pub fn main() !void {
+    const number = [5]i8{ 2, -1, 5, 6, 3 };
+    for (number, 0..) |value, i| {
+        std.debug.print("Index={}, Value={}\n", .{ i, value });
+    }
+    std.debug.print("number.len={}\n", .{number.len});
+
     const IntArray = SimpleArray(u64);
 
     sturcts.struct_main();
