@@ -1,102 +1,31 @@
 const std = @import("std");
 const sturcts = @import("0201_struct.zig");
 
-pub fn main() !void {
-    const number = [5]i8{ 2, -1, 5, 6, 3 };
-    for (number, 0..) |value, i| {
-        std.debug.print("Index={}, Value={}\n", .{ i, value });
-    }
-    std.debug.print("number.len={}\n", .{number.len});
-
-    const IntArray = SimpleArray(u64);
-
-    sturcts.struct_main();
-
-    var array = IntArray.init(std.heap.page_allocator);
-    defer array.deinit();
-
-    try array.append(1);
-    printArray(u64, array);
-
-    for (0..10) |value| {
-        try array.append(@as(u64, value));
-    }
-    printArray(u64, array);
-
-    for (1000..1010) |value| {
-        try array.append(@as(u64, value));
-    }
-    printArray(u64, array);
-
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    const allocator = arena.allocator();
-    const a_number = try allocator.create(u32);
-    a_number.* = 100;
-    std.debug.print("We allocated {p} which stores {d}!\n", .{ a_number, a_number.* });
-    arena.deinit();
-}
-
-/// 工具函数，打印我们的数组
-pub fn printArray(T: type, array: SimpleArray(T)) void {
-    var i: usize = 0;
-    while (i < array.len) : (i += 1) {
-        std.debug.print("{}, ", .{array.items[i]});
-    }
-    std.debug.print("\n", .{});
-}
-
-/// 一个能够自动调整容量的数组
-/// 通过init初始化
-/// 不再使用时通过deinit释放
-pub fn SimpleArray(comptime T: type) type {
+pub fn SimpleArrayList(comptime T: type) type {
     return struct {
-        const Self = @This();
+        const DefaultCapacity: usize = 10;
+        const This = @This();
+        allocator: std.mem.Allocator,
         items: []T,
         len: usize,
-        allocator: std.mem.Allocator,
 
-        pub fn init(allocator: std.mem.Allocator) Self {
-            return Self{
-                .items = &[_]T{},
-                .len = 0,
+        pub fn init(allocator: std.mem.Allocator) !This {
+            return .{
                 .allocator = allocator,
+                .items = try allocator.alloc(T, This.DefaultCapacity),
+                .len = 0,
             };
         }
 
-        pub fn capacity(self: *const Self) usize {
-            return self.items.len;
-        }
-
-        /// 在数组末尾添加一个元素
-        pub fn append(self: *Self, item: T) !void {
-            if (self.len >= self.capacity()) {
-                try self.enlarge();
-            }
-            self.items[self.len] = item;
-            self.len += 1;
-        }
-
-        /// 扩充数组容量
-        pub fn enlarge(self: *Self) !void {
-            const cap = self.capacity();
-
-            // 分配新的内存并复制数据
-            const source = self.items;
-            const new = try self.allocator.alloc(T, if (cap == 0) 10 else cap * 2);
-            std.mem.copyForwards(T, new, source);
-            self.items = new;
-
-            // 先前分配的内存
-            if (source.len > 0) {
-                self.allocator.free(source);
-            }
-        }
-
-        pub fn deinit(self: *Self) void {
-            if (self.capacity() > 0) {
-                self.allocator.free(self.items);
-            }
-            // 如果容量为0，说明没有初始化过,则没有必要释放
+        pub fn deinit(self: This) void {
+            self.allocator.free(self.items);
         }
     };
+}
+
+pub fn main() !void {
+    sturcts.struct_main();
+    const a = try SimpleArrayList(i8).init(std.heap.page_allocator);
+    defer a.deinit();
+    std.debug.print("{} of {}\n", .{ a.len, a.items.len });
 }
