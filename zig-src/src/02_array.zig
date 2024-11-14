@@ -17,6 +17,22 @@ pub fn SimpleArrayList(comptime T: type) type {
             };
         }
 
+        pub fn enlarge(self: *This) !void {
+            const new_capacity: usize = @intFromFloat(@as(f32, @floatFromInt(self.items.len)) * @as(f32, 1.5));
+            const new_items = try self.allocator.alloc(T, new_capacity);
+            std.mem.copyForwards(T, new_items, self.items);
+            self.allocator.free(self.items);
+            self.items = new_items;
+        }
+
+        pub fn append(self: *This, v: T) !void {
+            if (self.len >= self.items.len) {
+                try self.enlarge();
+            }
+            self.items[self.len] = v;
+            self.len += 1;
+        }
+
         pub fn nth(self: This, n: usize) !T {
             if (n >= self.len) {
                 return error.IndexOutOfBound;
@@ -43,4 +59,10 @@ pub fn main() !void {
     defer a.deinit();
     std.debug.print("{} of {}\n", .{ a.len, a.items.len });
     std.debug.print("{!}, {!}\n", .{ a.nth(10), a.setNth(10, 8) });
+    try a.enlarge();
+    std.debug.print("{} of {}\n", .{ a.len, a.items.len });
+    for (0..17) |value| {
+        try a.append(@as(i8, @intCast(value)));
+    }
+    std.debug.print("{} of {}\n", .{ a.len, a.items.len });
 }
