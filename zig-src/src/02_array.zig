@@ -24,6 +24,13 @@ pub fn SimpleArrayList(comptime T: type) type {
             return self.items[n];
         }
 
+        pub fn setNth(self: *This, n: usize, v: T) !void {
+            if (n >= self.len) {
+                return error.IndexOutOfBound;
+            }
+            self.items[n] = v;
+        }
+
         pub fn deinit(self: This) void {
             self.allocator.free(self.items);
         }
@@ -32,8 +39,8 @@ pub fn SimpleArrayList(comptime T: type) type {
 
 pub fn main() !void {
     sturcts.struct_main();
-    const a = try SimpleArrayList(i8).init(std.heap.page_allocator);
+    var a = try SimpleArrayList(i8).init(std.heap.page_allocator);
     defer a.deinit();
     std.debug.print("{} of {}\n", .{ a.len, a.items.len });
-    std.debug.print("{!}\n", .{a.nth(10)});
+    std.debug.print("{!}, {!}\n", .{ a.nth(10), a.setNth(10, 8) });
 }

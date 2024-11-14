@@ -353,6 +353,40 @@ pub fn nth(self: This, n: usize) !T {
 
 因为n是usize类型，所以它不会小于0；`self.len`一定小于等于`self.items.len`，所以只要n大于self.len，就没有必要判断是否大于self.items.len，一定是下标越界。
 
+### setNth
+
+类似于`nth`，`setNth`也要检查边界。当发生下标越界时，我们返回一样的错误；当没有发生错误时，我们返回void。
+
+```zig
+pub fn setNth(self: *This, n: usize, v: T) !void {
+    if (n >= self.len) {
+        return error.IndexOutOfBound;
+    }
+    self.items[n] = v;
+}
+```
+
+正如前文所言，此处我们需要修改列表，因此我们传入的参数类型为指针。
+
+::: warning
+假设你有一个列表的实例`a`，你希望通过`setNth`来设置元素，那么你必须声明a为一个可变量，也就是必须通过`var`关键词声明这个变量：
+
+```zig
+var a = try SimpleArrayList(i8).init(std.heap.page_allocator);
+defer a.deinit();
+std.debug.print("{!}\n", .{a.setNth(10, 8)});
+```
+
+如果你使用`const`声明了一个不可变量，编译器将会报错。
+
+```zig
+// error: expected type '*02_array.SimpleArrayList(i8)', found '*const 02_array.SimpleArrayList(i8)'
+const a = try SimpleArrayList(i8).init(std.heap.page_allocator);
+defer a.deinit();
+std.debug.print("{!}\n", .{a.setNth(10, 8)});
+```
+:::
+
 - 动态数组的简单实现（扩容策略）
 - 基础内存管理示例
 
