@@ -33,6 +33,21 @@ pub fn SimpleArrayList(comptime T: type) type {
             self.len += 1;
         }
 
+        pub fn insertNth(self: *This, n: usize, v: T) !void {
+            if (n > self.len) {
+                return error.IndexOutOfBound;
+            }
+            if (self.len >= self.items.len) {
+                try self.enlarge();
+            }
+            var i = self.len;
+            while (i >= n + 1) : (i -= 1) {
+                self.items[i] = self.items[i - 1];
+            }
+            self.items[n] = v;
+            self.len += 1;
+        }
+
         pub fn nth(self: This, n: usize) !T {
             if (n >= self.len) {
                 return error.IndexOutOfBound;
@@ -65,4 +80,7 @@ pub fn main() !void {
         try a.append(@as(i8, @intCast(value)));
     }
     std.debug.print("{} of {}\n", .{ a.len, a.items.len });
+    try a.insertNth(2, -10);
+    const a2th = a.nth(2);
+    std.debug.print("Got {!}\n", .{a2th});
 }
