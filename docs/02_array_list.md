@@ -520,6 +520,34 @@ pub fn removeNth(self: *This, n: usize) !T {
 
 ## 测试
 
+Zig自带一个便利的测试功能，[Zig Test](https://ziglang.org/documentation/master/#Zig-Test)。
+
+创建一个名为`add_two.zig`的文件，然后输入下面的内容：
+
+```zig
+const std = @import("std");
+
+pub fn add(a: i32, b: i32) i32 {
+    return a + b;
+}
+
+test "test adding" {
+    try std.testing.expect(add(1, 1) == 2);
+}
+```
+
+在上面的示例中，我们创建了一个名为`add`的函数，它将输入的两个数字相加并返回。
+
+随后，我们通过关键字`test`声明了一个名为`test adding`的测试。测试有一点像函数，但它不接受任何参数。类似于函数的函数体，测试也有一个“测试体”。在“测试体中”，我们使用`std.testing.expect`函数，来判断add(1, 2)的结果是不是2。`std.testing.expect(ok)`函数接收一个布尔型变量ok，当ok的值为false时，返回一个错误，当ok的值为true时，不返回值（void）。
+
+运行`zig test add_two.zig`，Zig将会自动寻找该文件里的所有测试，然后返回结果：
+
+```ansi
+All 1 tests passed.
+```
+
+我们将使用这一功能对我们的SimpleArrayList进行测试。
+
 ## 挑战
 
 在实际使用中，还有很多我们没有实现的常用方法。在这里，我们给出其中的一部分，给你作为挑战。
