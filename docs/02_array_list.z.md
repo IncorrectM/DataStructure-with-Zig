@@ -281,6 +281,7 @@ pub fn main() void {
 2. setNth(n, v)：将下标为n的元素设置为v；
 3. insertNth(n, v)：在下标n处插入元素v；
 4. append(v)：在列表末尾追加元素v；
+5. removeNth(n)：删除下标为n的元素；
 
 我们从`nth`开始吧。
 
@@ -445,6 +446,37 @@ pub fn insertNth(self: *This, n: usize, v: T) !void {
     self.len += 1;
 }
 ```
+
+### removeNth
+
+`removeNth`删除下标n处的元素，因此我们需要进行下标检查。因为列表中存储的元素可能需要进行反初始化等操作，所以我们不应该直接覆盖这个元素，而应该返回这个元素。综上，基本步骤为：
+
+1. 判断下标是否越界，是则返回下标越界错误，否则继续；
+2. 将n位置处元素保存为temp；
+3. 将n位置之后的元素全部前移一位；
+4. 返回temp；
+
+```zig -skip
+pub fn removeNth(self: *This, n: usize) !T {
+    // 1. 判断下标是否越界
+    if (n >= self.len) {
+        return error.IndexOutOfBound;
+    }
+    // 2. 将n位置处元素保存为temp
+    const temp = self.items[n];
+    // 3. 将n位置之后的元素全部前移一位
+    for (n..self.len - 1) |i| {
+        self.items[i] = self.items[i + 1];
+    }
+    self.len -= 1;
+    // 4. 返回temp
+    return temp;
+}
+```
+
+::: tip
+所有涉及到`nth`，也就是通过下标访问的方法，都应该进行下标检查。
+:::
 
 ## 测试
 

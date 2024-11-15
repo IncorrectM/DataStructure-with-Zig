@@ -62,6 +62,25 @@ pub fn SimpleArrayList(comptime T: type) type {
             self.items[n] = v;
         }
 
+        pub fn removeNth(self: *This, n: usize) !T {
+            if (n >= self.len) {
+                return error.IndexOutOfBound;
+            }
+            const temp = self.items[n];
+            for (n..self.len - 1) |i| {
+                self.items[i] = self.items[i + 1];
+            }
+            self.len -= 1;
+            return temp;
+        }
+
+        pub fn print(self: This) void {
+            for (0..self.len) |i| {
+                std.debug.print("{}, ", .{self.items[i]});
+            }
+            std.debug.print("\n", .{});
+        }
+
         pub fn deinit(self: This) void {
             self.allocator.free(self.items);
         }
@@ -74,13 +93,23 @@ pub fn main() !void {
     defer a.deinit();
     std.debug.print("{} of {}\n", .{ a.len, a.items.len });
     std.debug.print("{!}, {!}\n", .{ a.nth(10), a.setNth(10, 8) });
+
     try a.enlarge();
     std.debug.print("{} of {}\n", .{ a.len, a.items.len });
+
     for (0..17) |value| {
         try a.append(@as(i8, @intCast(value)));
     }
+    a.print();
     std.debug.print("{} of {}\n", .{ a.len, a.items.len });
+
     try a.insertNth(2, -10);
     const a2th = a.nth(2);
     std.debug.print("Got {!}\n", .{a2th});
+    a.print();
+    std.debug.print("{} of {}\n", .{ a.len, a.items.len });
+
+    _ = try a.removeNth(2);
+    a.print();
+    std.debug.print("{} of {}\n", .{ a.len, a.items.len });
 }
