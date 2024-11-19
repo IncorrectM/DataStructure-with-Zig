@@ -20,17 +20,10 @@ async function ensureFileExists(path: string) {
     }
 }
 
-/**
- * 执行Zig代码并返回输出。
- * @param code 要执行的Zig代码
- * @param singleFile 是否将代码保存为单独的文件再执行
- * @returns 执行结果的输出
- */
-async function executeZigCode(code: string, singleFile = false): Promise<string> {
+async function runZigCodeCommand(code: string, cmd: 'run' | 'test'): Promise<string> {
     return new Promise((resolve, reject) => {
-        const fullCode = singleFile ? code : `const std = @import("std");\npub fn main() !void {\n ${code} \n}`;
         
-        const md5Sum = crypto.createHash('md5').update(fullCode).digest('hex'); // 计算代码的MD5值
+        const md5Sum = crypto.createHash('md5').update(code).digest('hex'); // 计算代码的MD5值
         const tempFileName = `tmp-${md5Sum.substring(0, 6)}.zig`; // 使用MD5值的前6个字符作为文件名
         const tempFilePath = path.join(__dirname, '/tmp', tempFileName); // 创建临时文件路径
         const cacheFilePath = path.join(__dirname, '/tmp/cache', `tmp-${md5Sum.substring(0, 6)}.txt`); // 缓存文件路径
@@ -47,12 +40,12 @@ async function executeZigCode(code: string, singleFile = false): Promise<string>
             return;
         }
 
-        fs.writeFileSync(tempFilePath, fullCode); // 将代码写入临时文件
-        const command = `zig run ${tempFilePath}`; // 使用临时文件执行Zig代码
+        fs.writeFileSync(tempFilePath, code); // 将代码写入临时文件
+        const command = `zig ${cmd} ${tempFilePath}`; // 使用临时文件执行Zig代码
 
         let result = '';
-        console.log(`Executing temp file ${tempFilePath}.`);
-        console.log(`\t>>> ${fullCode.replaceAll('\n', '\n\t>>> ')}`)
+        console.log(`${cmd === 'run' ? 'Executing' : 'Testing'} temp file ${tempFilePath}.`);
+        console.log(`\t>>> ${code.replaceAll('\n', '\n\t>>> ')}`)
         childProcess.exec(command, null, (error, stdout, stderr) => {
             if (error) {
                 reject(error.message); // 如果有错误，拒绝Promise
@@ -79,6 +72,26 @@ async function executeZigCode(code: string, singleFile = false): Promise<string>
 }
 
 /**
+ * 执行Zig代码并返回输出。
+ * @param code 要执行的Zig代码
+ * @param singleFile 是否将代码保存为单独的文件再执行
+ * @returns 执行结果的输出
+ */
+async function executeZigCode(code: string, singleFile = false): Promise<string> {
+    const fullCode = singleFile ? code : `const std = @import("std");\npub fn main() !void {\n ${code} \n}`;
+    return runZigCodeCommand(fullCode, 'run');
+}
+
+/**
+ * 测试Zig代码并返回输出。
+ * @param code 要测试的Zig代码
+ * @returns 执行结果的输出
+ */
+async function testZigCode(code: string): Promise<string> {
+    return runZigCodeCommand(code, 'test');
+}
+
+/**
  * 处理Markdown文件中的Zig代码块。
  * @param filePath 输入的Markdown文件路径
  */
@@ -86,8 +99,10 @@ async function processMarkdown(filePath: string) {
     const content = fs.readFileSync(filePath, 'utf-8').split('\n'); // 读取文件内容并按行分割
     let inCodeBlock = false; // 标记是否在代码块中
     let currentBlock: CodeBlock | null = null; // 当前处理的代码块
+    let currentTestBlock: CodeBlock | null = null;  // 当前测试的代码块
 
     const collectedBlocks = new Map<string, CodeBlock>();
+    const collectedTestBlocks = new Map<string, CodeBlock>();
 
     // 遍历每一行，查找代码块并立即处理
     let result = '';
@@ -111,12 +126,22 @@ async function processMarkdown(filePath: string) {
                     highlightIndex: index
                 };
 
+                currentTestBlock = {
+                    type: match[1],
+                    content: '',
+                    line: i,
+                    highlightIndex: index
+                };
+
                 // 判断是否需要收集
                 const isCollect = line.match(/^```zig -collect_(\d+|\*)/);
                 if (isCollect) {
                     const match = isCollect[0];
                     const collectNum = match.substring(match.indexOf('_') + 1);
                     currentBlock.type = `collect:${collectNum}`;
+
+                    currentTestBlock = null;
+                    continue;
                 }
 
                 // 判断是否需要执行
@@ -125,6 +150,31 @@ async function processMarkdown(filePath: string) {
                     const match = isExecute[0];
                     const executeNum = match.substring(match.indexOf('_') + 1);
                     currentBlock.type = `execute:${executeNum}`;
+
+                    currentTestBlock = null;
+                    continue;
+                }
+
+                // 判断是否需要收集测试
+                const isTestCollect = line.match(/^```zig -test_collect_(\d+|\*)/);
+                if (isTestCollect) {
+                    const match = isTestCollect[0];
+                    const collectNum = match.substring(match.lastIndexOf('_') + 1);
+                    currentTestBlock.type = `test-collect:${collectNum}`;
+                    
+                    currentBlock = null;
+                    continue;
+                }
+
+                // 判断是否需要测试
+                const isTest = line.match(/^```zig -test_(\d+|\*)/);
+                if (isTest) {
+                    const match = isTest[0];
+                    const testNum = match.substring(match.indexOf('_') + 1);
+                    currentTestBlock.type = `test:${testNum}`;
+
+                    currentBlock = null;
+                    continue;
                 }
             } else {
                 result += line + '\n';
@@ -186,10 +236,66 @@ async function processMarkdown(filePath: string) {
                 }
                 
                 currentBlock = null;
+                continue;
+            }
+
+            if (currentTestBlock) {
+                // 向result中输出zig代码块和结果代码块（如果需要的话）
+                const { type, content, line, highlightIndex } = currentTestBlock;
+                console.log(currentTestBlock);
+                if (highlightIndex) {
+                    result += `\`\`\`zig ${highlightIndex}\n${content}\`\`\`\n`;
+                } else {
+                    result += `\`\`\`zig\n${content}\`\`\`\n`;
+                }
+                if (type.includes('-skip')) {
+                    // 不添加结果代码块
+                    continue;
+                
+                } else if (type.includes('test-collect:')) {
+                    // 收集代码到一块里再执行
+                    const collectNum = type.split(':')[1];
+                    const savedTestBlock = collectedTestBlocks.get(collectNum);
+                    console.log(savedTestBlock, collectNum);
+                    if (savedTestBlock && currentTestBlock.line != savedTestBlock.line) {
+                        // 存到一块
+                        savedTestBlock.content += currentTestBlock.content;
+                    } else {
+                        collectedTestBlocks.set(collectNum, currentTestBlock);
+                    }
+                
+                } else if (type.includes('test:')) {
+                    // 执行保存好的代码并输出
+                    const testNum = type.split(':')[1];
+                    if (testNum === '*') {
+                        console.error(`Connot execute public code at line ${line}.`);
+                        process.exit(-1);
+                    }
+                    const savedBlock = collectedTestBlocks.get(testNum);
+                    // 公共代码块
+                    const publicBlock = collectedTestBlocks.get('*');
+                    if (savedBlock) {
+                        // 公共代码块总是被放置在所有代码前面
+                        const publicCode = publicBlock ? publicBlock.content : '';
+                        const output = await testZigCode(publicCode + savedBlock.content + content);
+                        result += `\n\`\`\`ansi\n${output}\`\`\`\n`;
+                        // 执行完成后就清除
+                        // TODO: 有必要吗？
+                        collectedTestBlocks.delete(testNum);
+                        // 不清除公共代码块
+                    } else {
+                        console.error(`CodeBlock with test number ${testNum} is not saved.`);
+                        process.exit(-1);
+                    }
+                }
+                currentTestBlock = null;
             }
         } else if (inCodeBlock) {
             if (currentBlock) {
                 currentBlock.content += line + '\n'; // 添加代码内容
+            }
+            if (currentTestBlock) {
+                currentTestBlock.content += line + '\n';
             }
         } else {
             result += line + '\n';

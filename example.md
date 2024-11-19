@@ -110,3 +110,47 @@ pub fn main() void {
 ```
 
 - `-execute_*`是不合法的，会导致脚本报错退出
+
+- `-test_collect_数字`类似于`-collect_数字`，但只会在测试中使用，同样可以使用`*`
+
+```zig
+const std = @import("std");
+const expect = std.testing.expect;
+```
+
+```zig
+const num = 1;
+```
+
+```zig
+const num = 2;
+```
+
+- `-test_数字`类似于`-execute_数字`，但只会在测试中使用，不能使用`*`
+
+```zig
+test "test add two numbers" {
+    try expect(1 + num == 2);
+}
+```
+
+```ansi
+$stdout returns nothing.
+$stderr:
+1/1 tmp-fae177.test.test add two numbers...OK
+All 1 tests passed.
+```
+
+```zig
+test "test add two numbers" {
+    try expect(1 + num == 3);
+}
+```
+
+```ansi
+$stdout returns nothing.
+$stderr:
+1/1 tmp-65650e.test.test add two numbers...OK
+All 1 tests passed.
+```
+
