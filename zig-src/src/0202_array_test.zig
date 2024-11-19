@@ -46,3 +46,80 @@ test "test nth" {
     // 测试超出范围
     try expectError(error.IndexOutOfBound, list.nth(1000));
 }
+
+test "test setNth" {
+    // 初始化
+    const allocator = std.testing.allocator;
+    var list = try array.SimpleArrayList(u32).init(allocator);
+    defer list.deinit();
+
+    // 设置空的列表视为越界
+    try expectError(error.IndexOutOfBound, list.setNth(0, 1));
+
+    // 准备数据
+    for (0..17) |value| {
+        try list.append(@as(u32, @intCast(value)));
+    }
+    // 设置某个元素为1000，并判断取出的数值是否为1000
+    try list.setNth(6, 1000);
+    const actual = try list.nth(6);
+    try expect(actual == 1000);
+
+    // 还要检查前后的数据是否正常
+    const expected = [17]u32{ 0, 1, 2, 3, 4, 5, 1000, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+    try expect(std.mem.eql(u32, list.items[0..17], &expected));
+
+    // 测试越界
+    try expectError(error.IndexOutOfBound, list.setNth(1000, 1));
+}
+
+test "test insertNth" {
+    // 初始化
+    const allocator = std.testing.allocator;
+    var list = try array.SimpleArrayList(u32).init(allocator);
+    defer list.deinit();
+
+    // 设置空的列表的第一个视为append
+    try list.insertNth(0, 0);
+    try expect((try list.nth(0)) == 0);
+
+    // 准备数据
+    for (1..17) |value| {
+        try list.append(@as(u32, @intCast(value)));
+    }
+    // 在某个位置插入1000，并判断取出的数值是否为1000
+    try list.insertNth(6, 1000);
+    const actual = try list.nth(6);
+    try expect(actual == 1000);
+
+    // 还要检查前后的数据是否正常
+    const expected = [18]u32{ 0, 1, 2, 3, 4, 5, 1000, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+    try expect(std.mem.eql(u32, list.items[0..18], &expected));
+
+    // 测试越界
+    try expectError(error.IndexOutOfBound, list.insertNth(1000, 1));
+}
+
+test "test removeNth" {
+    // 初始化
+    const allocator = std.testing.allocator;
+    var list = try array.SimpleArrayList(u32).init(allocator);
+    defer list.deinit();
+
+    // 准备数据
+    for (0..17) |value| {
+        try list.append(@as(u32, @intCast(value)));
+    }
+
+    // 删除一个数据，然后判断是否正确删除
+    const removed = try list.removeNth(0);
+    try expect(removed == 0);
+    try expect((try list.nth(0)) != 0);
+
+    // 还要检查前后的数据是否正常
+    const expected = [16]u32{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+    try expect(std.mem.eql(u32, list.items[0..16], &expected));
+
+    // 测试越界
+    try expectError(error.IndexOutOfBound, list.removeNth(1000));
+}
