@@ -19,11 +19,30 @@ test "test append" {
         try list.append(@as(u32, @intCast(value)));
     }
     // 真实值
-    const actual = [17]u32{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+    const expected = [17]u32{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
     // 插入17个数字后，长度应该为17
     try expect(list.len == 17);
     // 插入17个数字，会触发两次扩容，list.items.len应该为22
     try expect(list.items.len == 22);
     // std.mem.eql可以对比两个数组/切片（slice）是否相同
-    try expect(std.mem.eql(u32, list.items[0..17], &actual));
+    try expect(std.mem.eql(u32, list.items[0..17], &expected));
+}
+
+test "test nth" {
+    // 初始化
+    const allocator = std.testing.allocator;
+    var list = try array.SimpleArrayList(u32).init(allocator);
+    defer list.deinit();
+    // 准备数据
+    for (0..17) |value| {
+        try list.append(@as(u32, @intCast(value)));
+    }
+    // 测试正常获取前17个元素
+    for (0..17) |index| {
+        const expected: u32 = @intCast(index);
+        const actual = try list.nth(index);
+        try expect(expected == actual);
+    }
+    // 测试超出范围
+    try expectError(error.IndexOutOfBound, list.nth(1000));
 }

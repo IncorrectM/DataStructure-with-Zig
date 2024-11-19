@@ -598,13 +598,13 @@ test "test nth" {
         try list.append(@as(u32, @intCast(value)));
     }
     // 真实值
-    const actual = [17]u32{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+    const expected = [17]u32{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
     // 插入17个数字后，长度应该为17
     try expect(list.len == 17);
     // 插入17个数字，会触发两次扩容，list.items.len应该为22
     try expect(list.items.len == 22);
     // std.mem.eql可以对比两个数组/切片（slice）是否相同
-    try expect(std.mem.eql(u32, list.items[0..17], &actual));
+    try expect(std.mem.eql(u32, list.items[0..17], &expected));
 }
 ```
 
@@ -615,6 +615,32 @@ test "test nth" {
 我们这里写了，列表容量为22，但列表长度为22，但是我们只判断了前17个元素，那剩下的5个是什么样的呢？你可以打印出来看看。这5个元素将是没有规律的一串数字，因为对应的这块内存没有被初始化过。
 
 ### nth
+
+能添加元素后，我们可以尝试获取元素了。
+
+```zig -skip
+test "test nth" {
+    // 初始化
+    const allocator = std.testing.allocator;
+    var list = try array.SimpleArrayList(u32).init(allocator);
+    defer list.deinit();
+    // 准备数据
+    for (0..17) |value| {
+        try list.append(@as(u32, @intCast(value)));
+    }
+    // 测试正常获取前17个元素
+    for (0..17) |index| {
+        const expected: u32 = @intCast(index);
+        const actual = try list.nth(index);
+        try expect(expected == actual);
+    }
+    // 测试超出范围
+    try expectError(error.IndexOutOfBound, list.nth(1000));
+}
+```
+
+这里我们使用了`expectError`函数，这个函数类似于`expect`，它接收两个参数：预期的错误类型和真实的错误联合。当真实的错误联合的值等于预期的错误类型时，函数将会正常退出，否则函数将会返回一个错误。
+
 ### setNth
 ### insertNth
 ### removeNth
@@ -721,4 +747,7 @@ pub fn SimpleArrayList(comptime T: type) type {
     };
 }
 ```
+:::
+
+::: details 0202_array_test.zig
 :::
