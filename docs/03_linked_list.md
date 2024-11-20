@@ -12,7 +12,7 @@
 
 让我们从定义节点开始。
 
-```zig -skip
+```zig
 pub fn LinkedListNode(comptime T: type) type {
     return struct {
         const This = @This();
@@ -35,7 +35,7 @@ pub fn LinkedListNode(comptime T: type) type {
 
 接下来，我们实现链表最基本的两个函数——初始化和反初始化。
 
-```zig -skip
+```zig
 pub fn LinkedList(comptime T: type) type {
     return struct {
         const Node = LinkedListNode(T);
