@@ -37,10 +37,34 @@ pub fn LinkedList(comptime T: type) type {
             }
             var next = self.head;
             var i: usize = 0;
-            while (next != null and i != n) : (i += 1) {
+            while (next != null and next.?.next != null and i != n) : (i += 1) {
                 next = next.?.next;
             }
             return next;
+        }
+
+        pub fn append(self: *This, v: T) !void {
+            // 2. 创建新节点
+            const new_node = try self.allocator.create(This.Node);
+            new_node.data = v;
+            new_node.next = null;
+            if (self.head == null) {
+                self.head = new_node;
+                self.length += 1;
+                return;
+            }
+            // 1. 找到最后一个节点
+            var last: ?*This.Node = self.head.?;
+            while (true) {
+                if (last.?.next == null) {
+                    break;
+                } else {
+                    last = last.?.next;
+                }
+            }
+            // 3. 让最后一个节点指向新节点
+            last.?.next = new_node;
+            self.length += 1;
         }
 
         pub fn deinit(self: *This) void {
@@ -48,12 +72,17 @@ pub fn LinkedList(comptime T: type) type {
             while (next != null) {
                 const cur = next.?;
                 next = cur.next;
-                if (@hasDecl(T, "deinit")) {
-                    // 反初始化节点里的数据
-                    cur.data.deinit();
+                switch (@typeInfo(T)) {
+                    .@"struct", .@"enum", .@"union" => {
+                        if (@hasDecl(T, "deinit")) {
+                            // 反初始化节点里的数据
+                            cur.data.deinit();
+                        }
+                    },
+                    else => {},
                 }
                 // 释放节点
-                self.allocator.free(cur);
+                self.allocator.destroy(cur);
             }
         }
     };
@@ -61,4 +90,22 @@ pub fn LinkedList(comptime T: type) type {
 
 pub fn main() void {
     std.debug.print("Hello LinkedList!", .{});
+}
+
+const expect = std.testing.expect;
+
+test "test append" {
+    // 初始化链表
+    const allocator = std.testing.allocator;
+    var list = LinkedList(i32).init(allocator);
+    defer list.deinit();
+
+    // 测试插入一些数据
+    for (0..17) |value| {
+        const v: i32 = @intCast(value);
+        try list.append(v);
+    }
+    try expect(list.head != null);
+    try expect(list.head.?.data == 0);
+    try expect(list.length == 17);
 }
