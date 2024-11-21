@@ -31,6 +31,18 @@ pub fn LinkedList(comptime T: type) type {
             };
         }
 
+        pub fn nth(self: This, n: usize) ?T {
+            if (n >= self.length) {
+                return null;
+            }
+            var next = self.head;
+            var i: usize = 0;
+            while (next != null and i != n) : (i += 1) {
+                next = next.?.next;
+            }
+            return next;
+        }
+
         pub fn deinit(self: *This) void {
             var next = self.head;
             while (next != null) {
@@ -48,5 +60,5 @@ pub fn LinkedList(comptime T: type) type {
 }
 
 pub fn main() void {
-    std.debug.print("Hello LinkedLIst!", .{});
+    std.debug.print("Hello LinkedList!", .{});
 }
