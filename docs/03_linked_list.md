@@ -60,12 +60,17 @@ pub fn LinkedList(comptime T: type) type {
             while (next != null) {
                 const cur = next.?;
                 next = cur.next;
-                if (@hasDecl(T, "deinit")) {
-                    // 反初始化节点里的数据
-                    cur.data.deinit();
+                switch (@typeInfo(T)) {
+                    .@"struct", .@"enum", .@"union" => {
+                        if (@hasDecl(T, "deinit")) {
+                            // 反初始化节点里的数据
+                            cur.data.deinit();
+                        }
+                    },
+                    else => {},
                 }
                 // 释放节点
-                self.allocator.free(cur);
+                self.allocator.destroy(cur);
             }
         }
     };
@@ -89,6 +94,10 @@ pub fn LinkedList(comptime T: type) type {
 最后是反初始化方法。
 
 第一眼望去，我们看到了一个先前没有见过的函数`@hasDecl()`。这同样是一个内建函数，它可以判断传入的类型（第一个参数）是否声明了给定的成员（第二个参数）。这有一点像一些语言中的反射。在这里，我们通过这个函数来判断节点里的数据需不需要反初始化，需要则执行反初始化。
+
+然后是一些神奇的标识符：`@"struct"`,`@"enum"`以及`@"union"`。这些是Zig中的一些特殊语法，以这种方式可以让标识符等于关键词。在这里，我们要判断T是不是结构体，枚举或者联合，所以我们用到了内建函数`@typeInfo(T)`。
+
+这里我们还使用到了`switch`语法。`switch`是一种穷举的匹配，逐个对比给定的值是否符合列出的值，然后执行第一个符合的值后面的代码，如果都不符合就执行else后面的代码。
 
 Ok，到这里我们可以想想需要什么方法了。
 
@@ -133,9 +142,72 @@ pub fn nth(self: This, n: usize) ?T {
 ```
 
 ### append
+
+要在尾部插入元素，主要的步骤为：
+
+1. 找到最后一个节点；
+2. 创建一个新的节点，这个新节点包含插入的元素；
+3. 让最后一个节点指向新节点；
+
+可以有这样的实现：
+
+```zig
+pub fn append(self: *This, v: T) !void {
+    // 2. 创建新节点
+    const new_node = try self.allocator.create(This.Node);
+    new_node.data = v;
+    new_node.next = null;
+    if (self.head == null) {
+        self.head = new_node;
+        self.length += 1;
+        return;
+    }
+    // 1. 找到最后一个节点
+    var last: ?*This.Node = self.head.?;
+    while (true) {
+        if (last.?.next == null) {
+            break;
+        } else {
+            last = last.?.next;
+        }
+    }
+    // 3. 让最后一个节点指向新节点
+    last.?.next = new_node;
+    self.length += 1;
+}
+```
+
+注意到，在实际实现中，我们把2提前了一点。因为我们的链表有一个特殊的节点——head。为了简化后面的代码，我们提前判断当前要追加的节点是不是第一个节点，是则直接改head，不是则进入我们上面说的流程。
+
 ### remove
 ### prepend
 ### popFirst
+
+## 测试
+
+### append
+
+和列表一样，我们先测试`append`。
+
+```zig
+const std = @import("std");
+const expect = std.testing.expect;
+test "test append" {
+    // 初始化链表
+    const allocator = std.testing.allocator;
+    var list = LinkedList(i32).init(allocator);
+    defer list.deinit();
+
+    // 测试插入一些数据
+    for (0..17) |value| {
+        const v: i32 = @intCast(value);
+        try list.append(v);
+    }
+    try expect(list.head != null);
+    try expect(list.head.?.data == 0);
+    try expect(list.length == 17);
+}
+```
 
 ## 挑战 - 双链表
 
