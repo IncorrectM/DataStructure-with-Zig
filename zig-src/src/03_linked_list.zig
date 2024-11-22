@@ -31,7 +31,7 @@ pub fn LinkedList(comptime T: type) type {
             };
         }
 
-        pub fn nth(self: This, n: usize) ?T {
+        pub fn nth(self: This, n: usize) ?*This.Node {
             if (n >= self.length) {
                 return null;
             }
@@ -139,6 +139,34 @@ test "test append" {
     try expect(list.head != null);
     try expect(list.head.?.data == 0);
     try expect(list.length == 17);
+}
+
+test "test nth" {
+    // 初始化链表
+    const allocator = std.testing.allocator;
+    var list = LinkedList(i32).init(allocator);
+    defer list.deinit();
+
+    // 测试插入一些数据
+    for (0..17) |value| {
+        const v: i32 = @intCast(value);
+        _ = try list.append(v);
+    }
+
+    // 开头
+    const first = list.nth(0);
+    try expect(first != null and first.?.data == 0);
+    // 中间
+    var middle = list.nth(9);
+    try expect(middle != null and middle.?.data == 9);
+    middle = list.nth(5);
+    try expect(middle != null and middle.?.data == 5);
+    //末尾
+    const last = list.nth(16);
+    try expect(last != null and last.?.data == 16);
+    // 超出范围
+    const outOfPlace = list.nth(100);
+    try expect(outOfPlace == null);
 }
 
 test "test remove first" {
