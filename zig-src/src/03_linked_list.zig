@@ -43,7 +43,7 @@ pub fn LinkedList(comptime T: type) type {
             return next;
         }
 
-        pub fn append(self: *This, v: T) !void {
+        pub fn append(self: *This, v: T) !*This.Node {
             // 2. 创建新节点
             const new_node = try self.allocator.create(This.Node);
             new_node.data = v;
@@ -51,7 +51,7 @@ pub fn LinkedList(comptime T: type) type {
             if (self.head == null) {
                 self.head = new_node;
                 self.length += 1;
-                return;
+                return new_node;
             }
             // 1. 找到最后一个节点
             var last: ?*This.Node = self.head.?;
@@ -65,6 +65,37 @@ pub fn LinkedList(comptime T: type) type {
             // 3. 让最后一个节点指向新节点
             last.?.next = new_node;
             self.length += 1;
+            return new_node;
+        }
+
+        pub fn remove(self: *This, node: *This.Node) void {
+            if (self.head == null) {
+                // 空链表，不删除
+                return;
+            }
+            // 判断头节点是不是要移除的节点
+            if (self.head == node) {
+                const cur = self.head;
+                self.head = self.head.?.next;
+                self.allocator.destroy(cur.?); // 由链表来管理内存的创建和销毁
+                return;
+            }
+            if (self.head.?.next == null) {
+                // 只有一个节点，并且这个节点不是要被删除的节点，那么不删除
+                return;
+            }
+            // 在后续的节点中找一个删除
+            var cur = self.head;
+            var next = self.head.?.next;
+            while (cur != null and next != null) {
+                if (next == node) {
+                    cur.?.next = next.?.next;
+                    self.allocator.destroy(next.?);
+                    return;
+                }
+                cur = next;
+                next = next.?.next;
+            }
         }
 
         pub fn deinit(self: *This) void {
@@ -103,9 +134,66 @@ test "test append" {
     // 测试插入一些数据
     for (0..17) |value| {
         const v: i32 = @intCast(value);
-        try list.append(v);
+        _ = try list.append(v);
     }
     try expect(list.head != null);
     try expect(list.head.?.data == 0);
     try expect(list.length == 17);
+}
+
+test "test remove first" {
+    // 初始化链表
+    const allocator = std.testing.allocator;
+    var list = LinkedList(i32).init(allocator);
+    defer list.deinit();
+
+    const node = try list.append(1);
+    _ = try list.append(2);
+    _ = try list.append(3);
+
+    list.remove(node);
+
+    const head = list.head;
+    try expect(head != null and head.?.data == 2);
+
+    const next = head.?.next;
+    try expect(next != null and next.?.data == 3);
+}
+
+test "test remove second" {
+    // 初始化链表
+    const allocator = std.testing.allocator;
+    var list = LinkedList(i32).init(allocator);
+    defer list.deinit();
+
+    _ = try list.append(1);
+    const node = try list.append(2);
+    _ = try list.append(3);
+
+    list.remove(node);
+
+    const head = list.head;
+    try expect(head != null and head.?.data == 1);
+
+    const next = head.?.next;
+    try expect(next != null and next.?.data == 3);
+}
+
+test "test remove third" {
+    // 初始化链表
+    const allocator = std.testing.allocator;
+    var list = LinkedList(i32).init(allocator);
+    defer list.deinit();
+
+    _ = try list.append(1);
+    _ = try list.append(2);
+    const node = try list.append(3);
+
+    list.remove(node);
+
+    const head = list.head;
+    try expect(head != null and head.?.data == 1);
+
+    const next = head.?.next;
+    try expect(next != null and next.?.data == 2);
 }
