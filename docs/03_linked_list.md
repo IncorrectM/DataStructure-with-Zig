@@ -223,6 +223,35 @@ pub fn remove(self: *This, node: *This.Node) void {
 ```
 
 ### prepend
+
+前面我们说到过，相比于列表，链表主要是在表的头部和尾部进行数据的插入和删除。
+
+`prepend`就是在头部插入数据的方法，我们称之为**头插法**。我们的链表保存了一个头节点，所以prepend的实现不会复杂，主要考虑下面的两点：
+
+1. 如果没有任何节点，插入的节点就是头节点；
+2. 如果有至少一个节点，就是新节点的next指向原来的头节点，然后令新节点成为头节点。
+
+由此，我们有下面的实现：
+
+```zig
+pub fn prepend(self: *This, v: T) !*This.Node {
+    const new_node = try self.allocator.create(This.Node);
+    new_node.data = v;
+    new_node.next = null;
+    if (self.head == null) {
+        // 没有头节点，就成为头节点
+        self.head = new_node;
+    } else {
+        // 让新节点的next指向原来的头节点
+        new_node.next = self.head.?;
+        // 成为新的头节点
+        self.head = new_node;
+    }
+    self.length += 1;
+    return new_node;
+}
+```
+
 ### popFirst
 
 ## 测试
@@ -350,6 +379,41 @@ test "test remove third" {
 }
 ```
 
+### prepend
+
+```zig
+test "test prepend" {
+    // 初始化链表
+    const allocator = std.testing.allocator;
+    var list = LinkedList(i32).init(allocator);
+    defer list.deinit();
+
+    const first = try list.append(1);
+    const second = try list.append(2);
+    const third = try list.append(3);
+
+    const neo = try list.prepend(0);
+
+    var neo_node = list.nth(0);
+    try expect(neo_node != null and neo_node.?.data == neo.data and neo_node.?.next == neo.next);
+
+    neo_node = list.nth(1);
+    try expect(neo_node != null and neo_node.?.data == first.data and neo_node.?.next == first.next);
+
+    neo_node = list.nth(2);
+    try expect(neo_node != null and neo_node.?.data == second.data and neo_node.?.next == second.next);
+
+    neo_node = list.nth(3);
+    try expect(neo_node != null and neo_node.?.data == third.data and neo_node.?.next == third.next);
+}
+```
+
 ## 挑战 - 双链表
 
+## 完整代码
+::: details 03_linked_list.zig
+:::
+
+::: details 0302_linked_list_test.zig
+:::
 🚧施工中🚧
