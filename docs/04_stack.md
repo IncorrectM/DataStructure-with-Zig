@@ -40,7 +40,7 @@ pub fn Stack(T: type) type {
 }
 ```
 
-首先，我们保存了This和List两个类型，来方便我们的后续使用。通过保存List，在有需要的时候，我们可以方便地把List的值修改为其他值，而不用修改代码中其他出现List的地方。
+首先，我们保存了This和List两个类型，来方便我们的后续使用。通过保存List，在有需要的时候，我们可以方便地把List的值修改为其他值，而不用修改代码中其他出现List的地方。当然，在我们简单的实现中，这并不是必要的。
 
 随后，我们保存了一个allocator，并用这个allocator初始化了一个列表的示例用来保存数据。
 
@@ -52,25 +52,51 @@ pub fn Stack(T: type) type {
 
 栈并不复杂，它有下面的主要方法：
 
-1. pop：返回最后一个元素，并从栈中移除这个元素；
-2. push：入栈一个元素；
+1. push：入栈一个元素；
+2. pop：返回最后一个元素，并从栈中移除这个元素；
 3. peek：返回最后一个元素，但不移除；
 
 借助于先前实现的SimpleArrayList，我们可以不用手动管理内存了！
 
 我们一个一个来。
 
-### pop
-
 ### push
+
+看着`push`的功能，你有没有觉得眼熟？没错，列表的`append`和它有着几乎一样的功能。因此，我们的实现只是简单的在`append`之外套了一层。
+
+```zig
+pub fn push(self: *This, v: T) !void {
+    try self.data.append(v);
+}
+```
+
+### pop
 
 ### peek
 
 ## 测试
 
-### pop
-
 ### push
+
+我们要保证数据正确地入栈，并且没有影响前面的数据。我们可以通过直接方位`data`成员内部的`items`成员来做出判断。
+
+```zig
+test "test push" {
+    var stack = try Stack(i32).init(allocator);
+    defer stack.deinit();
+
+    const actual = [_]i32{ 1, 3, 4, 9, 1, 0, 111, 19928, 31415, 8008820 };
+    for (actual) |value| {
+        try stack.push(value);
+        // 测试元素是否正确地入栈
+        try expect(stack.top() != 0);
+        try expect(stack.data.items[stack.top() - 1] == value);
+    }
+    try expect(std.mem.eql(i32, &actual, stack.data.items));
+}
+```
+
+### pop
 
 ### peek
 

@@ -16,6 +16,10 @@ pub fn Stack(T: type) type {
             };
         }
 
+        pub fn push(self: *This, v: T) !void {
+            try self.data.append(v);
+        }
+
         pub fn top(self: This) usize {
             return self.data.len;
         }
