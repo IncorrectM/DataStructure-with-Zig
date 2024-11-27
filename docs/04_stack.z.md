@@ -29,7 +29,7 @@ pub fn Stack(T: type) type {
             return self.data.len;
         }
 
-        pub fn isEmpty(self: This) usize {
+        pub fn isEmpty(self: This) bool {
             return self.top() == 0;
         }
 
@@ -72,6 +72,67 @@ pub fn push(self: *This, v: T) !void {
 
 ### pop
 
+记得第二章的挑战吗？如果你完成了挑战，那么这里的`pop`可以直接使用之前实现的pop。
+
+如果没有，其实也很简单：通过nth获得最后一个元素，在通过removeNth删除这个元素就行。因为我们删除的是最后一个元素，所以也可以不用removeNth，直接长度减一就行。
+
+于是，我们有下面的实现：
+
+```zig -skip
+pub fn pop(self: *This) ?T {
+    if (self.isEmpty()) {
+        // 空栈
+        return null;
+    }
+    const lastIndex = self.top() - 1;
+    //                                      👇 看这里 👇
+    const last = self.data.nth(lastIndex) catch unreachable;
+    // 使用函数进行修改
+    // self.data.removeNth(lastIndex);
+    // 或者手动修改
+    self.data.len -= 1;
+    return last;
+}
+```
+
+注意看，我们又遇到了没见过的东西！
+
+让我们回顾前面实现的`SimpleArrayList`，我们会发现`nth`函数返回的是一个错误联合类型，必须要处理错误才能拿到实际的值。
+
+在以前的实现中，我们通过`try`关键字处理错误——遇到错误时返回错误，否则获得具体值。`catch`也是用来处理错误的，我们用一个简单的例子来说明：
+
+```zig -singleFile
+const std = @import("std");
+
+pub fn errorIfZero(v: i32) !i32 {
+    if (v == 0) {
+        return error.Zero;
+    } else {
+        return v;
+    }
+}
+
+pub fn main() !void {
+    _ = errorIfZero(10086) catch {
+        std.debug.print("I will not be printed.\n", .{});
+    };
+
+    _ = errorIfZero(0) catch {
+        std.debug.print("I will be printed since you passed 0.\n", .{});
+    };
+
+    _ = errorIfZero(0) catch |err| {
+        std.debug.print("Caught an error {!}\n", .{err});
+    };
+}
+```
+
+我们定义了一个函数，在传入0时返回错误，否则返回传入的数字。
+
+第一个`catch`后面的语句不会被调用，因为`errorIfZero(10086)`会返回10086；第二个`catch`后面的语句会被调用，因为`errorIfZero(0)`会返回错误error.Zero；而在第三个`catch`后面的语句中，我们捕获了返回的错误，并且打印了错误的值。
+
+通过`catch`关键字，我们能更加灵活的处理错误联合类型。
+
 ### peek
 
 ## 测试
@@ -97,6 +158,31 @@ test "test push" {
 ```
 
 ### pop
+
+我们可以准备一组数据，将它们按顺序入栈。然后将它们的顺序翻转过来，再逐个出栈，确保实现了“先进后出”。最后，我们再试试弹出空栈能不能返回空值。
+
+```zig -skip
+test "test pop" {
+    var stack = try Stack(i32).init(allocator);
+    defer stack.deinit();
+
+    var actual = [_]i32{ 1, 3, 4, 9, 1, 0, 111, 19928, 31415, 8008820 };
+    for (actual) |value| {
+        try stack.push(value);
+    }
+
+    // 出栈应该是先进后出
+    std.mem.reverse(i32, &actual);
+    // 一个个出栈并检查是否符合预期
+    for (actual) |value| {
+        const poped = stack.pop();
+        try expect(poped != null and poped.? == value);
+    }
+
+    // 试图弹出空栈会返回空值
+    try expect(stack.pop() == null);
+}
+```
 
 ### peek
 
