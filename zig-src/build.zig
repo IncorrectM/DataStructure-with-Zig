@@ -55,6 +55,10 @@ const chapters = [_]Chapter{
         .filename = "04_stack.zig",
     },
     Chapter{
+        .num = 3040,
+        .filename = "0403_stack_appliance.zig",
+    },
+    Chapter{
         .num = 5,
         .filename = "05_queue.zig",
     },
@@ -71,21 +75,27 @@ pub fn build(b: *std.Build) void {
     // create compiler options
     const chapno = b.option(usize, "chapter", "Select which chapter's code to execute.");
     if (chapno) |n| {
-        if (n >= chapters.len) {
+        var chap: ?Chapter = null;
+        for (chapters) |value| {
+            if (value.num == chapno) {
+                chap = value;
+                break;
+            }
+        }
+        if (chap) |c| {
+            const chapter = c;
+            const chapter_step = b.step("chap", b.fmt(
+                "Run code in chapter {d} in file {s}.",
+                .{ n, chapter.filename },
+            ));
+            b.default_step = chapter_step;
+
+            const run_step = DSwZStep.create(b, chapter, "src");
+            chapter_step.dependOn(&run_step.step);
+        } else {
             print("Unkown chapter num {d}.\n", .{n});
             std.process.exit(2);
         }
-        const chapter = chapters[n];
-        const chapter_step = b.step("chap", b.fmt(
-            "Run code in chapter {d} in file {s}.",
-            .{ n, chapter.filename },
-        ));
-        b.default_step = chapter_step;
-
-        const run_step = DSwZStep.create(b, chapter, "src");
-        chapter_step.dependOn(&run_step.step);
-
-        return;
     }
 }
 
