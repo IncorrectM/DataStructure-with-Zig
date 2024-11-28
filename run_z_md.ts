@@ -242,7 +242,6 @@ async function processMarkdown(filePath: string) {
             if (currentTestBlock) {
                 // 向result中输出zig代码块和结果代码块（如果需要的话）
                 const { type, content, line, highlightIndex } = currentTestBlock;
-                console.log(currentTestBlock);
                 if (highlightIndex) {
                     result += `\`\`\`zig ${highlightIndex}\n${content}\`\`\`\n`;
                 } else {
@@ -256,7 +255,6 @@ async function processMarkdown(filePath: string) {
                     // 收集代码到一块里再执行
                     const collectNum = type.split(':')[1];
                     const savedTestBlock = collectedTestBlocks.get(collectNum);
-                    console.log(savedTestBlock, collectNum);
                     if (savedTestBlock && currentTestBlock.line != savedTestBlock.line) {
                         // 存到一块
                         savedTestBlock.content += currentTestBlock.content;
