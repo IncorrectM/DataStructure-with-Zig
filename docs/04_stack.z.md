@@ -135,6 +135,28 @@ pub fn main() !void {
 
 ### peek
 
+`peek`的功能有一点像`pop`，所以我们可以在pop的基础上做修改。
+
+```zig -skip
+pub fn peek(self: *This) ?T {
+    if (self.isEmpty()) {
+        // 空栈
+        return null;
+    }
+    const lastIndex = self.top() - 1;
+    const last = self.data.nth(lastIndex) catch unreachable;
+    return last;
+}
+```
+
+::: tip
+Zig中，参数和返回值总是**按值传递**的，传入的参数和返回的值都是原始值的一份复制。
+
+因此，通过`peek`获得的元素只是栈顶元素的一比一复刻，修改获得的元素并不会修改栈顶的那个元素。
+
+你也可以实现`peekRef`方法，获得指向栈顶元素的指针而不是复制。
+:::
+
 ## 测试
 
 ### push
@@ -146,14 +168,14 @@ test "test push" {
     var stack = try Stack(i32).init(allocator);
     defer stack.deinit();
 
-    const actual = [_]i32{ 1, 3, 4, 9, 1, 0, 111, 19928, 31415, 8008820 };
-    for (actual) |value| {
+    const expected = [_]i32{ 1, 3, 4, 9, 1, 0, 111, 19928, 31415, 8008820 };
+    for (expected) |value| {
         try stack.push(value);
         // 测试元素是否正确地入栈
         try expect(stack.top() != 0);
         try expect(stack.data.items[stack.top() - 1] == value);
     }
-    try expect(std.mem.eql(i32, &actual, stack.data.items));
+    try expect(std.mem.eql(i32, &expected, stack.data.items));
 }
 ```
 
@@ -166,15 +188,15 @@ test "test pop" {
     var stack = try Stack(i32).init(allocator);
     defer stack.deinit();
 
-    var actual = [_]i32{ 1, 3, 4, 9, 1, 0, 111, 19928, 31415, 8008820 };
-    for (actual) |value| {
+    var expected = [_]i32{ 1, 3, 4, 9, 1, 0, 111, 19928, 31415, 8008820 };
+    for (expected) |value| {
         try stack.push(value);
     }
 
     // 出栈应该是先进后出
-    std.mem.reverse(i32, &actual);
+    std.mem.reverse(i32, &expected);
     // 一个个出栈并检查是否符合预期
-    for (actual) |value| {
+    for (expected) |value| {
         const poped = stack.pop();
         try expect(poped != null and poped.? == value);
     }
@@ -185,6 +207,28 @@ test "test pop" {
 ```
 
 ### peek
+
+```zig -skip
+test "test peek" {
+    var stack = try Stack(i32).init(allocator);
+    defer stack.deinit();
+
+    // 试图peek空栈会返回空值
+    try expect(stack.peek() == null);
+
+    const expectedSource = [_]i32{ 1, 3, 4, 9, 1, 0, 111, 19928, 31415, 8008820 };
+    for (expectedSource) |value| {
+        try stack.push(value);
+    }
+    const expected = expectedSource[expectedSource.len - 1]; // 预期的peek结果
+
+    // 无论peek几次，返回的总是栈顶元素
+    for (expected) |_| {
+        const peeked = stack.peek();
+        try expect(peeked != null and peeked.? == expected);
+    }
+}
+```
 
 ## 应用示例 - 括号匹配
 

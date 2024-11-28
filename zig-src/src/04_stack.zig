@@ -34,6 +34,16 @@ pub fn Stack(T: type) type {
             return last;
         }
 
+        pub fn peek(self: *This) ?T {
+            if (self.isEmpty()) {
+                // 空栈
+                return null;
+            }
+            const lastIndex = self.top() - 1;
+            const last = self.data.nth(lastIndex) catch unreachable;
+            return last;
+        }
+
         pub fn top(self: This) usize {
             return self.data.len;
         }
