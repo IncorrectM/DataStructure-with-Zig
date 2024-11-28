@@ -14,14 +14,12 @@ const std = @import("std");
 pub fn main() !void {
     std.debug.print("Hello Zig! from stderr\n", .{});
 }
-
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 Hello Zig! from stderr
-
 ```
 
 这里我们进行约定文中的代码都由两个代码块组成：第一个代码块表示被执行的程序;第二个代码块表示执行的结果。
@@ -32,7 +30,7 @@ Hello Zig! from stderr
 现在对上面的代码进行说明。
 第一行的`const std = @import("std");`意为引入标准库，将标准库赋值给常量`std`，让我们详细看一下各个单词。
 
-1. `const`：声明一个常量;
+1. `const`：声明一个常量（或者说“常值变量”，即不可变的变量）;
 2. `std`：常量的名字，符合Zig标识符的命名规则（我们会在后面讨论这个）;
 3. `=`：赋值操作符;
 4. `@import("std")`：引入名为"std"的库，@import()是一个内置函数(builtin function)，我们将在后面讨论这个。
@@ -70,7 +68,6 @@ Hello Zig! from stderr
 const message = [_]u8{ 'h', 'e', 'l', 'l', 'o' };
 std.debug.print("{s}\n", .{message});   // 打印为字符串
 std.debug.print("{d}\n", .{message});   // 打印为数字
-
 ```
 
 ```ansi
@@ -78,11 +75,58 @@ $stdout returns nothing.
 $stderr:
 hello
 { 104, 101, 108, 108, 111 }
-
 ```
 ::: tip
 事实上，Zig语言中，字符串也是以u8数组的形式存储的。
 :::
+
+## 指针
+
+指针是很多语言中都有的一个概念，它表示的是内存里的一个地址。如果把变量看作一个个箱子的话，指针就是箱子的编号。计算机可以使用这些编号找到对应的箱子。我们称指针对应的内存里存储的数据为“指针指向的数据”。
+
+要表示指针的类型，只需要在指针指向的数据的类型前加一个`*`即可。当要访问指针指向的数据时，可以访问指针的`*`成员。对于已有的变量，我们可以通过`&`操作符来获取指向它的指针。
+
+下面的例子中，我们定义了一个整数，然后定义了一个指向它的指针。
+
+```zig
+var a: i32 = 100;
+const pointer: *i32 = &a;
+const another_pointer: *i32 = &a;
+std.debug.print("a equals {}, pointer points {}, another_pointer points {}\n", .{a, pointer.*, another_pointer.*});
+// 修改pointer指向的数据
+pointer.* = 200;
+std.debug.print("a equals {}, pointer points {}, another_pointer points {}\n", .{a, pointer.*, another_pointer.*});
+```
+
+```ansi
+$stdout returns nothing.
+$stderr:
+a equals 100, pointer points 100, another_pointer points 100
+a equals 200, pointer points 200, another_pointer points 200
+```
+
+通过观察运行结果，我们发现指针确实指向内存中的a。
+
+另外，我们在这里遇到了另一个声明变量的关键字——`var`。正如前文所言，`const`声明的是“不可变的变量”，而这里的`var`声明的是“可变的变量”。对于“不可变的变量”，我们一旦给它赋值就不能改变它的值，包括使用指针；而“可变的变量”则可以，所以我们需要用`var`来声明可以变化的变量`a`。尽管我们没有直接修改`a`，但是我们通过指针修改了a。
+
+而这里的`pointer`和`another_pointer`确实不可变的，而事实上他们也确实没有变化，变化的是它们指向的变量，而这里它们指向了可变的变量。
+
+如果我们希望保证指针指向的变量不可变呢？可以用`*const`作为类型前缀，例如`*const i32`，这个类型说明指针指向了一个i32类型的数据，并且这个数据是不可变的。
+
+例如下面的例子中，如果去掉最后一行的注释，整个程序将无法顺利编译。
+
+```zig
+const a: i32 = 100;
+const pointer: *const i32 = &a;
+std.debug.print("a equals {}, pointer points {}\n", .{a, pointer.*});
+// pointer.* = 200; // 报错，无法编译
+```
+
+```ansi
+$stdout returns nothing.
+$stderr:
+a equals 100, pointer points 100
+```
 
 ## 条件语句
 
@@ -98,14 +142,12 @@ if (a > b) {
 } else {
     std.debug.print("{d} is lesser than {d}.\n", .{ a, b });
 }
-
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 42 equals 42.
-
 ```
 
 这里我们看到了3个未曾见过的语句：
@@ -131,14 +173,12 @@ while (i < 10) {
     i += 1;
 }
 std.debug.print("\n", .{});
-
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 0,1,2,3,4,5,6,7,8,9,
-
 ```
 
 我们稍微解释一下上面的语句吧。
@@ -158,14 +198,12 @@ while (i < 10) : (i += 1) {
     std.debug.print("{d},", .{i});
 }
 std.debug.print("\n", .{});
-
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 0,1,2,3,4,5,6,7,8,9,
-
 ```
 
 可以看到，这两个代码段输出的结果是一样的。我们一般使用第二种。
@@ -179,14 +217,12 @@ for (0..10) |value| {
     std.debug.print("{d},", .{value});
 }
 std.debug.print("\n", .{});
-
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 0,1,2,3,4,5,6,7,8,9,
-
 ```
 
 其他和while里是一样的，我们只需要看不一样的`for (0..10) |value| {}`：遍历`0..10`这个序列（包括0，但是不包括10），`value`表示当前迭代到哪一个数字。
@@ -199,14 +235,12 @@ for (someNumbers) |value| {
     std.debug.print("{d},", .{value});
 }
 std.debug.print("\n", .{});
-
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 1,3,5,7,9,11,13,15,17,19,21,
-
 ```
 
 在这个示例中，我们初始化了一个名为`someNumbers`的数组，并为它赋值，然后通过for循环遍历了它。
@@ -219,14 +253,12 @@ for (someNumbers, 0..) |value, index| {
     std.debug.print("{}: {d}, ", .{ index, value });
 }
 std.debug.print("\n", .{});
-
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 0: 1, 1: 3, 2: 5, 3: 7, 4: 9, 5: 11, 6: 13, 7: 15, 8: 17, 9: 19, 10: 21, 
-
 ```
 
 Voila!
@@ -241,7 +273,6 @@ const someEvenNumbers = [_]u8{ 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 };
 for (someNumbers, someEvenNumbers, 0..) |odd, even, index| {
     std.debug.print("{d}: {d} and {d}\n", .{ index, odd, even });
 }
-
 ```
 
 ```ansi
@@ -258,7 +289,6 @@ $stderr:
 8: 17 and 18
 9: 19 and 20
 10: 21 and 22
-
 ```
 这里的`someNumbers`，`someEvenNumbers`和通过`0..`生成的数组具有相同的长度，所以我们可以一起遍历它们。
 :::
@@ -293,14 +323,12 @@ const std = @import("std");
 pub fn main() !void {
     std.debug.print("{}, {}, {}, {}, {}\n", .{ isPrime(2), isPrime(3), isPrime(4), isPrime(100), isPrime(101) });
 }
-
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 true, true, false, false, true
-
 ```
 
 这里我们来看一下这几个特殊的函数：`@as`,`@intFromFloat`,`@sqrt`,`@floatFromInt`，这些函数和前面见过的`@import`一样，是编译器提供的内建函数。
@@ -339,7 +367,6 @@ pub fn isPrime(num: u128) bool {
         return true;
     }
 }
-
 ```
 :::
 
@@ -356,14 +383,12 @@ const std = @import("std");
 pub fn main() !void {
     std.debug.print("Hello Zig! from stderr\n", .{});
 }
-
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 Hello Zig! from stderr
-
 ```
 
 这里有一个神秘的`!`符号，它是做什么的呢？
@@ -380,7 +405,6 @@ pub fn divide(a: f64, b: f64) !f64 {
     }
     return a / b;
 }
-
 ```
 
 注意第2行，我们让函数返回`!f64`，这说明它可能返回一个错误，也可能返回一个f64类型的值。
@@ -405,7 +429,6 @@ pub fn divide(a: f64, b: f64) !f64 {
     }
     return a / b;
 }
-
 ```
 
 ```ansi
@@ -413,7 +436,6 @@ $stdout returns nothing.
 $stderr:
 1.5e0
 error.DividedByZero
-
 ```
 
 我们两次调用了同一个函数，第一次调用正确地返回了`1.5`，第二次调用正确地返回了`error.DividedByZero`，正如我们所料。
@@ -433,14 +455,12 @@ const std = @import("std");
 pub fn main() void {
     std.debug.print("I can return void too!\n", .{});
 }
-
 ```
 
 ```ansi
 $stdout returns nothing.
 $stderr:
 I can return void too!
-
 ```
 :::
 
