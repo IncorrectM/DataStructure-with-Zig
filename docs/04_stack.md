@@ -239,9 +239,430 @@ test "test peek" {
 
 ## 应用示例 - 括号匹配
 
-## 挑战
+栈有很多用处，如函数调用、表达式求解、树的遍历等等。在这里，我们给出其中的一个应用——括号匹配。
+
+在一般的使用中，括号总是成对出现的，也就是说，出现了'('后总是会在某个地方出现')'，中括号'[]'和大括号'{}'也是一样。我们可以实现一个函数来检查某一条字符串是否符合成对出现的规则。
+
+让我们用**程序流程图**来整理一下我们的思路。
+
+程序流程图是常见的表示算法流程的方式，我们使用圆角矩形表示程序的开始和结束，用矩形表示处理数据，用菱形表示分支，用带箭头的线表示程序执行的方向，使用既非矩形也非菱形的平行四边形来表示数据的输入输出。
+
+我们的基本思路是：遍历给定字符串中的每一个字符，遇到左括号('(', '['或'{')时，使其入栈；遇到右括号(')', ']'或'}')时，取出栈顶元素，并对比是不是对应的左括号。因为栈是先进后出的，所以栈顶元素是最近的一个左括号。如果是对应的左括号，则继续，否则返回false。
+
+在遍历所有字符后，如果栈不为空，就说明还有没被匹配的左括号，就说明括号无法正常匹配，则返回false；如果栈为空，就说明所有括号都有正确的对应，则返回true。
+
+由此，可以得出下面的程序流程图：
+
+```mermaid
+flowchart TD
+    Start(检查括号是否匹配) --> input[/输入被检查的字符串source/]
+    input --> init[i := 0, 初始化栈stack]
+    init --> checkI{"i < source.len?"}
+
+    checkI --是--> setC["c := source[i]"]
+    checkI --否--> returnResult[/返回stack是否为空/] --> End(算法结束)
+    
+    setC --> checkC{"c是左括号(, [或{?"}
+    checkC --否--> checkCBack{"c是右括号), ]或}?"}
+    checkC --是--> push[c入栈stack] --> incrementI
+
+    checkCBack --否--> incrementI["i = i + 1"] --> checkI
+    checkCBack --是--> pop[stack出栈t] --> checkT{t是对应的左括号？}
+    
+    checkT --否--> returnFalse[/返回false/] --> End
+    checkT --是--> incrementI
+```
+
+上面的程序流程图是针对常规的通过下标遍历数组的语言编写的，对于Zig，我们并不需要一个i作为下标，也不需要检查i是否越界，这很大地简化了我们的程序。
+
+我们有下面的实现，我们在程序中标注了主要的步骤：
+
+```zig
+const std = @import("std");
+const Stack = @import("lib/04_stack.zig").Stack;  // 👈替换为你的文件的位置
+
+/// 检查括号（包括小括号、中括号以及大括号）是否匹配。
+///
+/// @param source 被检查的字符串。
+/// @return
+///   - `true` 如果所有括号都正确匹配。
+///   - `false` 如果括号不匹配。
+///   - 抛出错误（例如 OOM）。
+///
+/// @example
+/// ```zig
+/// const result = try checkParentness("()");
+/// assert(result == true);
+///
+/// const result2 = try checkParentness("([)]");
+/// assert(result2 == false);
+/// ```
+pub fn checkParentness(source: []const u8) !bool {
+    // 准备分配器
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const allocator = arena.allocator();
+    defer arena.deinit(); // 通过ArenaAllocator，我们可以一口气释放所有分配的内存
+
+    // 准备一个栈用于匹配
+    var stack = try Stack(u8).init(allocator);
+    // defer stack.deinit(); // 因为可以使用ArenaAllocator统一释放，所以我们可以不调用deinit
+
+    // 遍历源字符串
+    for (source) |c| {
+        switch (c) {
+            '(', '[', '{' => {
+                try stack.push(c);
+            },
+            ')', ']', '}' => {
+                const top = stack.pop();
+                if (top) |t| {
+                    const expected: u8 = switch (c) {
+                        ')' => '(',
+                        ']' => '[',
+                        '}' => '{',
+                        else => unreachable,
+                    };
+                    if (t != expected) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            },
+            else => {},
+        }
+    }
+    return stack.isEmpty();
+}
+```
+
+阅读上面的的代码，尝试将它和程序流程图对应起来吧！
+
+另外，这里我们要介绍一种特殊的注释——**文档注释**。文档注释是由`///`（必须是刚好3个斜杠）开始的注释，它是一种多行注释，连续的文档注释会被视作同一个注释，并被展示在生成的文档中。你可以阅读[这个页面](https://ziglang.org/documentation/master/#Doc-Comments)来了解更多。
+
+最后，让我们为函数编写测试：
+
+```zig
+const TestCase = struct {
+    source: []const u8,
+    expected: bool,
+};
+
+test "test checkParentness" {
+    const cases = [_]TestCase{
+        .{
+            .source = "[({})]",
+            .expected = true,
+        },
+        .{
+            .source = "He[ll(o{Wo}rl)d]!",
+            .expected = true,
+        },
+        .{
+            .source = "[({})",
+            .expected = false,
+        },
+        .{
+            .source = "[({}]",
+            .expected = false,
+        },
+        .{
+            .source = "[({)]",
+            .expected = false,
+        },
+        .{
+            .source = "[(})]",
+            .expected = false,
+        },
+        .{
+            .source = "[{})]",
+            .expected = false,
+        },
+        .{
+            .source = "({})]",
+            .expected = false,
+        },
+        .{
+            .source = "})]",
+            .expected = false,
+        },
+        .{
+            .source = "[({",
+            .expected = false,
+        },
+    };
+
+    for (cases) |case| {
+        const actual = try checkParentness(case.source);
+        try std.testing.expect(actual == case.expected);
+    }
+}
+```
+
+```ansi
+$stdout returns nothing.
+$stderr:
+1/1 tmp-17e66c.test.test checkParentness...OK
+All 1 tests passed.
+```
+
+## 挑战 - 斐波那契数列
+
+斐波那契数列是一系列有意思的数字，它的数学定义如下：
+
+$
+F(n) = \left\{\begin{matrix}
+ 0 & n = 0\\
+ 1 & n = 1\\
+ F(n-1) + F(n-2) & else
+\end{matrix}\right.
+$
+
+一般来说，我们通常使用递归或者循环来求解斐波那契数列。但在这里，我们希望你能利用栈“先进先出”的特性来实现它。挑战自己吧！
 
 ## 完整代码
 
-🚧施工中🚧
+::: details 04_stack.zig
+```zig
+const std = @import("std");
 
+const ArrayList = @import("02_array.zig").SimpleArrayList;
+
+pub fn Stack(T: type) type {
+    return struct {
+        const This = @This();
+        const List = ArrayList(T);
+        allocator: std.mem.Allocator,
+        data: This.List,
+
+        pub fn init(allocator: std.mem.Allocator) !This {
+            return .{
+                .allocator = allocator,
+                .data = try This.List.init(allocator),
+            };
+        }
+
+        pub fn push(self: *This, v: T) !void {
+            try self.data.append(v);
+        }
+
+        pub fn pop(self: *This) ?T {
+            if (self.isEmpty()) {
+                // 空栈
+                return null;
+            }
+            const lastIndex = self.top() - 1;
+            const last = self.data.nth(lastIndex) catch unreachable;
+            // 使用函数进行修改
+            // self.data.removeNth(lastIndex);
+            // 或者手动修改
+            self.data.len -= 1;
+            return last;
+        }
+
+        pub fn peek(self: *This) ?T {
+            if (self.isEmpty()) {
+                // 空栈
+                return null;
+            }
+            const lastIndex = self.top() - 1;
+            const last = self.data.nth(lastIndex) catch unreachable;
+            return last;
+        }
+
+        pub fn top(self: This) usize {
+            return self.data.len;
+        }
+
+        pub fn isEmpty(self: This) bool {
+            return self.top() == 0;
+        }
+
+        pub fn deinit(self: *This) void {
+            self.data.deinit();
+        }
+    };
+}
+```
+:::
+
+::: details 0402_stack_test.zig
+```zig
+const std = @import("std");
+const Stack = @import("04_stack.zig").Stack;
+
+const expect = std.testing.expect;
+const allocator = std.testing.allocator;
+
+test "test push" {
+    var stack = try Stack(i32).init(allocator);
+    defer stack.deinit();
+
+    const expected = [_]i32{ 1, 3, 4, 9, 1, 0, 111, 19928, 31415, 8008820 };
+    for (expected) |value| {
+        try stack.push(value);
+        // 测试元素是否正确地入栈
+        try expect(stack.top() != 0);
+        try expect(stack.data.items[stack.top() - 1] == value);
+    }
+    try expect(std.mem.eql(i32, &expected, stack.data.items));
+}
+
+test "test pop" {
+    var stack = try Stack(i32).init(allocator);
+    defer stack.deinit();
+
+    var expected = [_]i32{ 1, 3, 4, 9, 1, 0, 111, 19928, 31415, 8008820 };
+    for (expected) |value| {
+        try stack.push(value);
+    }
+
+    // 出栈应该是先进后出
+    std.mem.reverse(i32, &expected);
+    // 一个个出栈并检查是否符合预期
+    for (expected) |value| {
+        const poped = stack.pop();
+        try expect(poped != null and poped.? == value);
+    }
+
+    // 试图弹出空栈会返回空值
+    try expect(stack.pop() == null);
+}
+
+test "test peek" {
+    var stack = try Stack(i32).init(allocator);
+    defer stack.deinit();
+
+    // 试图peek空栈会返回空值
+    try expect(stack.peek() == null);
+
+    const expectedSource = [_]i32{ 1, 3, 4, 9, 1, 0, 111, 19928, 31415, 8008820 };
+    for (expectedSource) |value| {
+        try stack.push(value);
+    }
+    const expected = expectedSource[expectedSource.len - 1]; // 预期的peek结果
+
+    // 无论peek几次，返回的总是栈顶元素
+    for (expected) |_| {
+        const peeked = stack.peek();
+        try expect(peeked != null and peeked.? == expected);
+    }
+}
+```
+:::
+
+::: details 0403_stack_appliance.zig
+```zig
+const std = @import("std");
+const Stack = @import("04_stack.zig").Stack;
+
+/// 检查括号（包括小括号、中括号以及大括号）是否匹配。
+///
+/// @param source 被检查的字符串。
+/// @return
+///   - `true` 如果所有括号都正确匹配。
+///   - `false` 如果括号不匹配。
+///   - 抛出错误（例如 OOM）。
+///
+/// @example
+/// ```zig
+/// const result = try checkParentness("()");
+/// assert(result == true);
+///
+/// const result2 = try checkParentness("([)]");
+/// assert(result2 == false);
+/// ```
+pub fn checkParentness(source: []const u8) !bool {
+    // 准备分配器
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const allocator = arena.allocator();
+    defer arena.deinit(); // 通过ArenaAllocator，我们可以一口气释放所有分配的内存
+
+    // 准备一个栈用于匹配
+    var stack = try Stack(u8).init(allocator);
+    // defer stack.deinit(); // 因为可以使用ArenaAllocator统一释放，所以我们可以不调用deinit
+
+    // 遍历源字符串
+    for (source) |c| {
+        switch (c) {
+            '(', '[', '{' => {
+                try stack.push(c);
+            },
+            ')', ']', '}' => {
+                const top = stack.pop();
+                if (top) |t| {
+                    const expected: u8 = switch (c) {
+                        ')' => '(',
+                        ']' => '[',
+                        '}' => '{',
+                        else => unreachable,
+                    };
+                    if (t != expected) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            },
+            else => {},
+        }
+    }
+    return stack.isEmpty();
+}
+
+const TestCase = struct {
+    source: []const u8,
+    expected: bool,
+};
+
+test "test checkParentness" {
+    const cases = [_]TestCase{
+        .{
+            .source = "[({})]",
+            .expected = true,
+        },
+        .{
+            .source = "He[ll(o{Wo}rl)d]!",
+            .expected = true,
+        },
+        .{
+            .source = "[({})",
+            .expected = false,
+        },
+        .{
+            .source = "[({}]",
+            .expected = false,
+        },
+        .{
+            .source = "[({)]",
+            .expected = false,
+        },
+        .{
+            .source = "[(})]",
+            .expected = false,
+        },
+        .{
+            .source = "[{})]",
+            .expected = false,
+        },
+        .{
+            .source = "({})]",
+            .expected = false,
+        },
+        .{
+            .source = "})]",
+            .expected = false,
+        },
+        .{
+            .source = "[({",
+            .expected = false,
+        },
+    };
+
+    for (cases) |case| {
+        const actual = try checkParentness(case.source);
+        try std.testing.expect(actual == case.expected);
+    }
+}
+```
+:::

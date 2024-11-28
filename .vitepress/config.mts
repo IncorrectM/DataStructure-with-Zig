@@ -1,7 +1,7 @@
-import { defineConfig } from 'vitepress'
+import { withMermaid } from 'vitepress-plugin-mermaid';
 
 // https://vitepress.dev/reference/site-config
-export default defineConfig({
+export default withMermaid({
   base: '/DataStructure-with-Zig/',
   title: "Data Structure with Zig",
   description: "Learning Zig by writing data structures.",
@@ -19,6 +19,16 @@ export default defineConfig({
       lang: 'en',
       link: '/docs/en'
     }
+  },
+
+  markdown: {
+    math: true
+  },
+
+  mermaid: {},
+
+  mermaidPlugin: {
+    class: "mermaid"
   },
 
   // TODO: make a theme config for each language

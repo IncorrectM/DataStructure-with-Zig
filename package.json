@@ -4,7 +4,10 @@
   },
   "devDependencies": {
     "@types/bun": "^1.1.13",
-    "vitepress": "^1.4.1"
+    "markdown-it-mathjax3": "^4.3.2",
+    "mermaid": "^11.4.1",
+    "vitepress": "^1.4.1",
+    "vitepress-plugin-mermaid": "^2.0.17"
   },
   "scripts": {
     "docs:dev": "vitepress dev",
