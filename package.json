@@ -17,6 +17,7 @@
     "docz:02": "bun ./run_z_md.ts run ./docs/02_array_list.z.md",
     "docz:03": "bun ./run_z_md.ts run ./docs/03_linked_list.z.md",
     "docz:04": "bun ./run_z_md.ts run ./docs/04_stack.z.md",
+    "docz:05": "bun ./run_z_md.ts run ./docs/05_queue.z.md",
     "docz:example": "bun ./run_z_md.ts run ./example.z.md"
   }
 }
