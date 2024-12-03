@@ -182,6 +182,114 @@ All 3 tests passed.
 
 ## 应用示例
 
+我们将要使用队列和栈一起来实现**回文**的判断。回文是一种特殊的字符串，它和它的翻转是相同的，比如'aba'，'a'，'12321'都是回文。
+
+除了使用队列和栈，还有其他更高效的实现，留给读者自己探索。
+
+对于使用队列和栈的算法，我们只需要准备一个队列和一个栈，然后将待判断的字符串的字符一个个入队和入栈。然后再一个个出队和出栈并进行对比即可。
+
+我们有这样的实现：
+
+```zig
+const std = @import("std");
+const Queue = @import("lib/05_queue.zig").Queue;
+const Stack = @import("lib/04_stack.zig").Stack;
+
+/// 给定字符串是否为回文。
+///
+/// @param source 被检查的字符串。
+/// @return
+///   - `true` 如果是回文。
+///   - `false` 如果不是回文。
+///   - 抛出错误（例如 OOM）。
+pub fn testPalindrome(str: []const u8) !bool {
+    // 初始化需要使用的结构
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const allocator = arena.allocator();
+    defer arena.deinit(); // 借助于ArenaAllocator，我们可以统一释放分配的内存
+
+    var queue = Queue(u8).init(allocator);
+    var stack = try Stack(u8).init(allocator);
+
+    // 逐个入队入栈
+    for (str) |c| {
+        try queue.enqueue(c);
+        try stack.push(c);
+    }
+
+    // 逐个出队出栈并对比
+    while (!stack.isEmpty()) {
+        const a = queue.dequeue();
+        const b = stack.pop();
+        if (a != b) {
+            // 只要有一个不相等，就说明不是回文
+            return false;
+        }
+    }
+    // 全部相等，说明是回文
+    return true;
+}
+```
+
+让我们为这个函数编写测试：
+
+```zig
+const TestCase = struct {
+    source: []const u8,
+    expected: bool,
+};
+const expect = std.testing.expect;
+
+test "palindrome" {
+    const cases = [_]TestCase{
+        .{
+            .source = "a",
+            .expected = true,
+        },
+        .{
+            .source = "aba",
+            .expected = true,
+        },
+        .{
+            .source = "12321",
+            .expected = true,
+        },
+        .{
+            .source = "abcba",
+            .expected = true,
+        },
+        .{
+            .source = "ab",
+            .expected = false,
+        },
+        .{
+            .source = "ba",
+            .expected = false,
+        },
+        .{
+            .source = "123",
+            .expected = false,
+        },
+        .{
+            .source = "HelloWorld!",
+            .expected = false,
+        },
+    };
+
+    for (cases) |case| {
+        const result = try testPalindrome(case.source);
+        try expect(result == case.expected);
+    }
+}
+```
+
+```ansi
+$stdout returns nothing.
+$stderr:
+1/1 tmp-9df69f.test.palindrome...OK
+All 1 tests passed.
+```
+
 ## 挑战 —— 双向队列
 
 双向链表是链表的变体，它允许在队列的头部进入队列，也允许从队列的末尾离开队列。在链表的基础上，它还多了两个方法：
@@ -306,5 +414,93 @@ test "use enqueu and dequeue together" {
 ```
 :::
 
-🚧施工中🚧
+::: details 0503_queue_appliance.zig
+```zig
+const std = @import("std");
+const Queue = @import("05_queue.zig").Queue;
+const Stack = @import("04_stack.zig").Stack;
 
+/// 给定字符串是否为回文。
+///
+/// @param source 被检查的字符串。
+/// @return
+///   - `true` 如果是回文。
+///   - `false` 如果不是回文。
+///   - 抛出错误（例如 OOM）。
+pub fn testPalindrome(str: []const u8) !bool {
+    // 初始化需要使用的结构
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const allocator = arena.allocator();
+    defer arena.deinit(); // 借助于ArenaAllocator，我们可以统一释放分配的内存
+
+    var queue = Queue(u8).init(allocator);
+    var stack = try Stack(u8).init(allocator);
+
+    // 逐个入队入栈
+    for (str) |c| {
+        try queue.enqueue(c);
+        try stack.push(c);
+    }
+
+    // 逐个出队出栈并对比
+    while (!stack.isEmpty()) {
+        const a = queue.dequeue();
+        const b = stack.pop();
+        if (a != b) {
+            // 只要有一个不相等，就说明不是回文
+            return false;
+        }
+    }
+    // 全部相等，说明是回文
+    return true;
+}
+
+const TestCase = struct {
+    source: []const u8,
+    expected: bool,
+};
+const expect = std.testing.expect;
+
+test "palindrome" {
+    const cases = [_]TestCase{
+        .{
+            .source = "a",
+            .expected = true,
+        },
+        .{
+            .source = "aba",
+            .expected = true,
+        },
+        .{
+            .source = "12321",
+            .expected = true,
+        },
+        .{
+            .source = "abcba",
+            .expected = true,
+        },
+        .{
+            .source = "ab",
+            .expected = false,
+        },
+        .{
+            .source = "ba",
+            .expected = false,
+        },
+        .{
+            .source = "123",
+            .expected = false,
+        },
+        .{
+            .source = "HelloWorld!",
+            .expected = false,
+        },
+    };
+
+    for (cases) |case| {
+        const result = try testPalindrome(case.source);
+        try expect(result == case.expected);
+    }
+}
+```
+:::
