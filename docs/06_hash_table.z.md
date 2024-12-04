@@ -63,6 +63,59 @@ pub fn main() void {
 
 ## 初始化和反初始化
 
+我们整理一下我们需要什么吧。
+
+首先，我们需要一个哈希函数来处理输入的数据。因为我们无法提前确定输入的数据会是什么类型，所以我们要让调用者提供哈希函数，然后保存起来以便后续使用。
+
+然后，我们需要一个数组来保存数据。因为我们会使用到链表，所以需要调用者传入一个allocator，我们可以用这个allocator来创建数组。
+
+最后，因为我们使用链地址法来处理冲突，所以我们需要给数组的每个元素赋予一个链表。
+
+由此，我们可以得到一个基本的初始化函数：
+
+```zig -skip {6}
+pub fn HashTable(T: type) type {
+    return struct {
+        const This = @This();
+        const List = LinkedList(T);
+        allocator: std.mem.Allocator,
+        hash_func: *const fn (T) usize,
+        lists: []List,
+
+        pub fn init(allocator: std.mem.Allocator, hash_func: *const fn (T) usize, data_length: usize) !This {
+            var lists = try allocator.alloc(List, data_length);
+            for (0..lists.len) |i| {
+                lists[i] = List.init(allocator);
+            }
+            return .{
+                .allocator = allocator,
+                .lists = lists,
+                .hash_func = hash_func,
+            };
+        }
+    };
+}
+```
+
+注意这里的第6行，我们遇到了一个没见过的数据类型：`*const fn (T) usize`。我们可以将其分为三个部分：
+
+1. `fn (T) usize`：这个类型表示一个函数，这个函数接收一个T类型的输入参数，然后返回一个usize值；
+2. `const fn (T) usize`：`const`修饰后面的类型，说明后面的数据是不可变的；
+3. `*const fn (T) usize`： `*`表示指针；
+
+组合起来，这个类型就表示一个指向不可变的函数类型的数据的指针。
+
+在反初始化函数中，我们必须释放所有申请来的内存，包括链表、数组等：
+
+```zig -skip
+pub fn deinit(self: *This) void {
+    for (0..self.lists.len) |i| {
+        self.lists[i].deinit();
+    }
+    self.allocator.free(self.lists);
+}
+```
+
 ## 常用方法
 
 ## 测试
