@@ -65,7 +65,7 @@ pub fn main() void {
 
 我们整理一下我们需要什么吧。
 
-首先，我们需要一个哈希函数来处理输入的数据。因为我们无法提前确定输入的数据会是什么类型，所以我们要让调用者提供哈希函数，然后保存起来以便后续使用。
+首先，我们需要一个哈希函数来处理输入的数据。因为我们无法提前确定输入的数据会是什么类型，所以我们要让调用者提供哈希函数，然后保存起来以便后续使用。同时，为了计算哈希值，我们还需要用户提供一个获取关键字的函数，我们根据关键字的哈希值来存放和查找数据。
 
 然后，我们需要一个数组来保存数据。因为我们会使用到链表，所以需要调用者传入一个allocator，我们可以用这个allocator来创建数组。
 
@@ -74,15 +74,21 @@ pub fn main() void {
 由此，我们可以得到一个基本的初始化函数：
 
 ```zig -skip {6}
-pub fn HashTable(T: type) type {
+pub fn HashTable(K: type, V: type) type {
     return struct {
         const This = @This();
-        const List = LinkedList(T);
+        const List = LinkedList(V);
         allocator: std.mem.Allocator,
-        hash_func: *const fn (T) usize,
+        hash_func: *const fn (V) usize, // 哈希函数
+        key_accessor: *const fn (V) K,  // 关键字获取器
         lists: []List,
 
-        pub fn init(allocator: std.mem.Allocator, hash_func: *const fn (T) usize, data_length: usize) !This {
+        pub fn init(
+            allocator: std.mem.Allocator,
+            hash_func: *const fn (K) usize,
+            key_accessor: *const fn (V) K,
+            data_length: usize,
+        ) !This {
             var lists = try allocator.alloc(List, data_length);
             for (0..lists.len) |i| {
                 lists[i] = List.init(allocator);
@@ -91,6 +97,7 @@ pub fn HashTable(T: type) type {
                 .allocator = allocator,
                 .lists = lists,
                 .hash_func = hash_func,
+                .key_accessor = key_accessor,
             };
         }
     };
@@ -131,8 +138,9 @@ pub fn deinit(self: *This) void {
 于是我们有这样的实现：
 
 ```zig -skip
-pub fn put(self: *This, value: T) !void {
-    const hash = self.hash_func(value) % self.lists.len; // 哈希值可能会很大，通过取余的方式避免越界
+pub fn put(self: *This, value: V) !void {
+    const key = self.key_accessor(value);
+    const hash = self.hash_func(key) % self.lists.len; // 哈希值可能会很大，通过取余的方式避免越界
     _ = try self.lists[hash].append(value);
 }
 ```
@@ -174,7 +182,12 @@ for (numbers) |num| {
 test "put some values" {
     // 初始化数据
     const allocator = std.testing.allocator;
-    var hash_table = try HashTable([]const u8).init(allocator, &djb2, 10);
+    var hash_table = try HashTable([]const u8, []const u8).init(
+        allocator,
+        &djb2,
+        &selfAsKey,
+        10,
+    );
     defer hash_table.deinit();
 
     const strings = [_][]const u8{
@@ -199,7 +212,7 @@ test "put some values" {
 
     // 查看是否正确放置
     for (strings, expected_hash) |str, exp_hash| {
-        const calc_hash = hash_table.hash_func(str);
+        const calc_hash = hash_table.hash_func(hash_table.key_accessor(str));
         try std.testing.expect(calc_hash == exp_hash);
         // 查看添加的元素有没有在对应的链表中
         const list = hash_table.lists[calc_hash % hash_table.lists.len];
