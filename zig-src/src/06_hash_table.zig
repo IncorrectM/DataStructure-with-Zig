@@ -29,14 +29,16 @@ pub fn HashTable(K: type, V: type) type {
         const This = @This();
         const List = LinkedList(V);
         allocator: std.mem.Allocator,
-        hash_func: *const fn (V) usize,
+        hash_func: *const fn (K) usize,
         key_accessor: *const fn (V) K,
+        key_euqal: *const fn (K, K) bool,
         lists: []List,
 
         pub fn init(
             allocator: std.mem.Allocator,
             hash_func: *const fn (K) usize,
             key_accessor: *const fn (V) K,
+            key_euqal: *const fn (K, K) bool,
             data_length: usize,
         ) !This {
             var lists = try allocator.alloc(List, data_length);
@@ -48,6 +50,7 @@ pub fn HashTable(K: type, V: type) type {
                 .lists = lists,
                 .hash_func = hash_func,
                 .key_accessor = key_accessor,
+                .key_euqal = key_euqal,
             };
         }
 
@@ -55,6 +58,21 @@ pub fn HashTable(K: type, V: type) type {
             const key = self.key_accessor(value);
             const hash = self.hash_func(key) % self.lists.len; // 哈希值可能会很大，通过取余的方式避免越界
             _ = try self.lists[hash].append(value);
+        }
+
+        pub fn get(self: *This, key: K) ?V {
+            const hash = self.hash_func(key) % self.lists.len;
+            const list = self.lists[hash];
+
+            var cur = list.head;
+            // 逐个节点查找
+            while (cur) |c| {
+                if (self.key_euqal(self.key_accessor(c.*.data), key)) {
+                    return c.data;
+                }
+                cur = c.next;
+            }
+            return null;
         }
 
         pub fn deinit(self: *This) void {
@@ -75,6 +93,10 @@ pub fn selfAsKey(s: []const u8) []const u8 {
     return s;
 }
 
+pub fn stringEqual(a: []const u8, b: []const u8) bool {
+    return std.mem.eql(u8, a, b);
+}
+
 test "init and deinit hash table" {
     // 测试是否发生内存泄漏
     const allocator = std.testing.allocator;
@@ -82,6 +104,7 @@ test "init and deinit hash table" {
         allocator,
         &djb2,
         &selfAsKey,
+        &stringEqual,
         10,
     );
     defer hash_table.deinit();
@@ -94,6 +117,7 @@ test "put some values" {
         allocator,
         &djb2,
         &selfAsKey,
+        &stringEqual,
         10,
     );
     defer hash_table.deinit();
@@ -137,4 +161,68 @@ test "put some values" {
             return error.ElementNotAppened;
         }
     }
+}
+
+const Student = struct {
+    name: []const u8,
+    class: u8,
+};
+
+pub fn studentNameAccessor(student: Student) []const u8 {
+    return student.name;
+}
+
+test "put and get some values" {
+    // 初始化数据
+    const allocator = std.testing.allocator;
+    var hash_table = try HashTable([]const u8, Student).init(
+        allocator,
+        &djb2,
+        &studentNameAccessor,
+        &stringEqual,
+        10,
+    );
+    defer hash_table.deinit();
+
+    const students = [_]Student{
+        Student{
+            .name = "Alice",
+            .class = 'A',
+        },
+        Student{
+            .name = "Bob",
+            .class = 'B',
+        },
+        Student{
+            .name = "Coco",
+            .class = 'A',
+        },
+        Student{
+            .name = "Eric",
+            .class = 'C',
+        },
+        Student{
+            .name = "Frank",
+            .class = 'C',
+        },
+        Student{
+            .name = "Groot",
+            .class = 'B',
+        },
+    };
+
+    // 放入数据
+    for (students) |student| {
+        try hash_table.put(student);
+    }
+
+    // 拿出数据
+    for (students) |student| {
+        const stu = hash_table.get(studentNameAccessor(student));
+        try std.testing.expect(stu != null and std.mem.eql(u8, student.name, stu.?.name));
+    }
+
+    // 尝试获取不存在的数据
+    const not_exists = hash_table.get("Hugo");
+    try std.testing.expect(not_exists == null);
 }

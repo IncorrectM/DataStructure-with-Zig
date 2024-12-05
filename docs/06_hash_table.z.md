@@ -65,7 +65,15 @@ pub fn main() void {
 
 我们整理一下我们需要什么吧。
 
-首先，我们需要一个哈希函数来处理输入的数据。因为我们无法提前确定输入的数据会是什么类型，所以我们要让调用者提供哈希函数，然后保存起来以便后续使用。同时，为了计算哈希值，我们还需要用户提供一个获取关键字的函数，我们根据关键字的哈希值来存放和查找数据。
+首先，我们需要一个哈希函数来处理输入的数据。因为我们无法提前确定输入的数据会是什么类型，所以我们要让调用者提供哈希函数，然后保存起来以便后续使用。同时，为了计算哈希值，我们还需要用户提供一个获取关键字的函数，我们根据关键字的哈希值来存放和查找数据。因为key的种类多种多样，我们还需要传入一个函数来对比key是否相等。
+
+::: tip
+等等，为什么前面的那些实现不需要传入判断是否相等的函数？
+
+在前面的实现中，我们没有需要对比存储的数据的地方。只有判断索引是否相等和判断指针是否相等的需求，而这些是不需要单独传入函数的。
+
+如果你添加了其他按值查找的方法，那你确实需要传入判断元素是否相等的函数。
+:::
 
 然后，我们需要一个数组来保存数据。因为我们会使用到链表，所以需要调用者传入一个allocator，我们可以用这个allocator来创建数组。
 
@@ -79,14 +87,16 @@ pub fn HashTable(K: type, V: type) type {
         const This = @This();
         const List = LinkedList(V);
         allocator: std.mem.Allocator,
-        hash_func: *const fn (V) usize, // 哈希函数
-        key_accessor: *const fn (V) K,  // 关键字获取器
+        hash_func: *const fn (K) usize,
+        key_accessor: *const fn (V) K,
+        key_euqal: *const fn (K, K) bool,
         lists: []List,
 
         pub fn init(
             allocator: std.mem.Allocator,
             hash_func: *const fn (K) usize,
             key_accessor: *const fn (V) K,
+            key_euqal: *const fn (K, K) bool,
             data_length: usize,
         ) !This {
             var lists = try allocator.alloc(List, data_length);
@@ -98,6 +108,7 @@ pub fn HashTable(K: type, V: type) type {
                 .lists = lists,
                 .hash_func = hash_func,
                 .key_accessor = key_accessor,
+                .key_euqal = key_euqal,
             };
         }
     };
@@ -170,6 +181,32 @@ for (numbers) |num| {
 
 ### get
 
+`get`函数是这样工作的：
+
+1. 用户输入一个关键字；
+2. 计算该关键字的哈希值；
+3. 根据该哈希值找到对应的链表；
+4. 遍历链表来寻找关键字等于给定关键字的元素；
+5. 如果链表中不存在此元素，则返回空值；
+
+我们可以这样实现它：
+
+```zig -skip
+pub fn get(self: *This, key: K) ?V {
+    const hash = self.hash_func(key) % self.lists.len;
+    const list = self.lists[hash];
+    var cur = list.head;
+    // 逐个节点查找
+    while (cur) |c| {
+        if (self.key_euqal(self.key_accessor(c.*.data), key)) {
+            return c.data;
+        }
+        cur = c.next;
+    }
+    return null;
+}
+```
+
 ### remove
 
 ## 测试
@@ -179,6 +216,14 @@ for (numbers) |num| {
 让我们尝试放置一些数据，然后在链表中寻找他们。
 
 ```zig -skip
+pub fn selfAsKey(s: []const u8) []const u8 {
+    return s;
+}
+
+pub fn stringEqual(a: []const u8, b: []const u8) bool {
+    return std.mem.eql(u8, a, b);
+}
+
 test "put some values" {
     // 初始化数据
     const allocator = std.testing.allocator;
@@ -186,6 +231,7 @@ test "put some values" {
         allocator,
         &djb2,
         &selfAsKey,
+        &stringEqual,
         10,
     );
     defer hash_table.deinit();
@@ -229,6 +275,76 @@ test "put some values" {
             return error.ElementNotAppened;
         }
     }
+}
+```
+
+### get
+
+我们尝试存入一些数据，然后让我们新写的方法来寻找这些数据。
+
+```zig -skip
+const Student = struct {
+    name: []const u8,
+    class: u8,
+};
+
+pub fn studentNameAccessor(student: Student) []const u8 {
+    return student.name;
+}
+
+test "put and get some values" {
+    // 初始化数据
+    const allocator = std.testing.allocator;
+    var hash_table = try HashTable([]const u8, Student).init(
+        allocator,
+        &djb2,
+        &studentNameAccessor,
+        &stringEqual,
+        10,
+    );
+    defer hash_table.deinit();
+
+    const students = [_]Student{
+        Student{
+            .name = "Alice",
+            .class = 'A',
+        },
+        Student{
+            .name = "Bob",
+            .class = 'B',
+        },
+        Student{
+            .name = "Coco",
+            .class = 'A',
+        },
+        Student{
+            .name = "Eric",
+            .class = 'C',
+        },
+        Student{
+            .name = "Frank",
+            .class = 'C',
+        },
+        Student{
+            .name = "Groot",
+            .class = 'B',
+        },
+    };
+
+    // 放入数据
+    for (students) |student| {
+        try hash_table.put(student);
+    }
+
+    // 拿出数据
+    for (students) |student| {
+        const stu = hash_table.get(studentNameAccessor(student));
+        try std.testing.expect(stu != null and std.mem.eql(u8, student.name, stu.?.name));
+    }
+
+    // 尝试获取不存在的数据
+    const not_exists = hash_table.get("Hugo");
+    try std.testing.expect(not_exists == null);
 }
 ```
 
