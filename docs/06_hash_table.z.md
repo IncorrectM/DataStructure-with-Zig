@@ -118,7 +118,106 @@ pub fn deinit(self: *This) void {
 
 ## 常用方法
 
+哈希表最常用的方法是添加元素`put`和查找元素`get`，然后我们还希望删除元素`remove`。
+
+### put
+
+添加元素到哈希表的过程包括：
+
+1. 计算哈希值；
+2. 根据哈希值找到链表；
+3. 向链表中添加元素；
+
+于是我们有这样的实现：
+
+```zig -skip
+pub fn put(self: *This, value: T) !void {
+    const hash = self.hash_func(value) % self.lists.len; // 哈希值可能会很大，通过取余的方式避免越界
+    _ = try self.lists[hash].append(value);
+}
+```
+
+在这里，我们通过**模运算**操作符限制了`hash`的值。模运算会计算两个数相除所得到的余数：
+
+```zig
+const numbers = [_]u32{ 0, 1, 2, 3 };
+const number: u32 = 2;
+for (numbers) |num| {
+    std.debug.print("{} % {} = {}\n", .{ num, number, num % number });
+}
+```
+
+和其他语言中不同，Zig中的模运算只能作用于**无符号数**，也就是以u开头的整数的类型，比如u8，u32，usize等。如果要对其他类型进行模运算，必须要使用内置函数`@rem`或`@mod`，其中，前者会保留被除数的符号，后者则不会，两者的除数都必须大于0。
+
+```zig
+const numbers = [_]i32{ -3, -2, -1, 0, 1, 2, 3 };
+const number: i32 = 2;
+for (numbers) |num| {
+    std.debug.print("@rem({}, {}) = {}\n", .{ num, number, @rem(num, number) });
+    std.debug.print("@mod({}, {}) = {}\n", .{ num, number, @mod(num, number) });
+}
+```
+
+因为我们存储链表的数组的长度是固定的，因此在使用哈希值获取索引时，必须以这种方式避免索引过大。
+
+### get
+
+### remove
+
 ## 测试
+
+### put
+
+让我们尝试放置一些数据，然后在链表中寻找他们。
+
+```zig -skip
+test "put some values" {
+    // 初始化数据
+    const allocator = std.testing.allocator;
+    var hash_table = try HashTable([]const u8).init(allocator, &djb2, 10);
+    defer hash_table.deinit();
+
+    const strings = [_][]const u8{
+        "Hello World!",
+        "This is DSwZ!",
+        "Have a good day!",
+        "Goodbye~",
+    };
+
+    // 预先计算好的哈希值（DJB2）
+    const expected_hash = [_]usize{
+        41186,
+        41186,
+        50162,
+        33068,
+    };
+
+    // 放置元素
+    for (strings) |str| {
+        try hash_table.put(str);
+    }
+
+    // 查看是否正确放置
+    for (strings, expected_hash) |str, exp_hash| {
+        const calc_hash = hash_table.hash_func(str);
+        try std.testing.expect(calc_hash == exp_hash);
+        // 查看添加的元素有没有在对应的链表中
+        const list = hash_table.lists[calc_hash % hash_table.lists.len];
+        var cur = list.head;
+        while (cur) |c| {
+            if (std.mem.eql(u8, c.data, str)) {
+                // 确实在链表中
+                break;
+            }
+            cur = c.next;
+        }
+        if (cur == null) {
+            // 没有在对应链表中找到
+            return error.ElementNotAppened;
+        }
+    }
+}
+```
 
 ## 应用示例
 

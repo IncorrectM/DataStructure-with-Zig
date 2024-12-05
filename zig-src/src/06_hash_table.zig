@@ -44,6 +44,11 @@ pub fn HashTable(T: type) type {
             };
         }
 
+        pub fn put(self: *This, value: T) !void {
+            const hash = self.hash_func(value) % self.lists.len; // 哈希值可能会很大，通过取余的方式避免越界
+            _ = try self.lists[hash].append(value);
+        }
+
         pub fn deinit(self: *This) void {
             for (0..self.lists.len) |i| {
                 self.lists[i].deinit();
@@ -63,4 +68,51 @@ test "init and deinit hash table" {
     const allocator = std.testing.allocator;
     var hash_table = try HashTable([]const u8).init(allocator, &djb2, 10);
     defer hash_table.deinit();
+}
+
+test "put some values" {
+    // 初始化数据
+    const allocator = std.testing.allocator;
+    var hash_table = try HashTable([]const u8).init(allocator, &djb2, 10);
+    defer hash_table.deinit();
+
+    const strings = [_][]const u8{
+        "Hello World!",
+        "This is DSwZ!",
+        "Have a good day!",
+        "Goodbye~",
+    };
+
+    // 预先计算好的哈希值（DJB2）
+    const expected_hash = [_]usize{
+        41186,
+        41186,
+        50162,
+        33068,
+    };
+
+    // 放置元素
+    for (strings) |str| {
+        try hash_table.put(str);
+    }
+
+    // 查看是否正确放置
+    for (strings, expected_hash) |str, exp_hash| {
+        const calc_hash = hash_table.hash_func(str);
+        try std.testing.expect(calc_hash == exp_hash);
+        // 查看添加的元素有没有在对应的链表中
+        const list = hash_table.lists[calc_hash % hash_table.lists.len];
+        var cur = list.head;
+        while (cur) |c| {
+            if (std.mem.eql(u8, c.data, str)) {
+                // 确实在链表中
+                break;
+            }
+            cur = c.next;
+        }
+        if (cur == null) {
+            // 没有在对应链表中找到
+            return error.ElementNotAppened;
+        }
+    }
 }
