@@ -31,14 +31,14 @@ pub fn HashTable(K: type, V: type) type {
         allocator: std.mem.Allocator,
         hash_func: *const fn (K) usize,
         key_accessor: *const fn (V) K,
-        key_euqal: *const fn (K, K) bool,
+        key_equal: *const fn (K, K) bool,
         lists: []List,
 
         pub fn init(
             allocator: std.mem.Allocator,
             hash_func: *const fn (K) usize,
             key_accessor: *const fn (V) K,
-            key_euqal: *const fn (K, K) bool,
+            key_equal: *const fn (K, K) bool,
             data_length: usize,
         ) !This {
             var lists = try allocator.alloc(List, data_length);
@@ -50,7 +50,7 @@ pub fn HashTable(K: type, V: type) type {
                 .lists = lists,
                 .hash_func = hash_func,
                 .key_accessor = key_accessor,
-                .key_euqal = key_euqal,
+                .key_equal = key_equal,
             };
         }
 
@@ -67,7 +67,7 @@ pub fn HashTable(K: type, V: type) type {
             var cur = list.head;
             // 逐个节点查找
             while (cur) |c| {
-                if (self.key_euqal(self.key_accessor(c.*.data), key)) {
+                if (self.key_equal(self.key_accessor(c.*.data), key)) {
                     return c.data;
                 }
                 cur = c.next;
@@ -82,7 +82,7 @@ pub fn HashTable(K: type, V: type) type {
             var cur = list.head;
             // 逐个节点查找
             while (cur) |c| {
-                if (self.key_euqal(self.key_accessor(c.*.data), key)) {
+                if (self.key_equal(self.key_accessor(c.*.data), key)) {
                     break;
                 }
                 cur = c.next;
