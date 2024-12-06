@@ -75,6 +75,24 @@ pub fn HashTable(K: type, V: type) type {
             return null;
         }
 
+        pub fn remove(self: *This, key: K) void {
+            const hash = self.hash_func(key) % self.lists.len;
+            const list = &self.lists[hash];
+
+            var cur = list.head;
+            // 逐个节点查找
+            while (cur) |c| {
+                if (self.key_euqal(self.key_accessor(c.*.data), key)) {
+                    break;
+                }
+                cur = c.next;
+            }
+            // 删除找到的节点
+            if (cur) |c| {
+                list.remove(c);
+            }
+        }
+
         pub fn deinit(self: *This) void {
             for (0..self.lists.len) |i| {
                 self.lists[i].deinit();
@@ -225,4 +243,56 @@ test "put and get some values" {
     // 尝试获取不存在的数据
     const not_exists = hash_table.get("Hugo");
     try std.testing.expect(not_exists == null);
+}
+
+test "put and remove some values" {
+    // 初始化数据
+    const allocator = std.testing.allocator;
+    var hash_table = try HashTable([]const u8, Student).init(
+        allocator,
+        &djb2,
+        &studentNameAccessor,
+        &stringEqual,
+        10,
+    );
+    defer hash_table.deinit();
+
+    const students = [_]Student{
+        Student{
+            .name = "Alice",
+            .class = 'A',
+        },
+        Student{
+            .name = "Bob",
+            .class = 'B',
+        },
+        Student{
+            .name = "Coco",
+            .class = 'A',
+        },
+        Student{
+            .name = "Eric",
+            .class = 'C',
+        },
+        Student{
+            .name = "Frank",
+            .class = 'C',
+        },
+        Student{
+            .name = "Groot",
+            .class = 'B',
+        },
+    };
+
+    // 放入数据
+    for (students) |student| {
+        try hash_table.put(student);
+    }
+
+    for (students) |student| {
+        const stu = hash_table.get(student.name);
+        try std.testing.expect(stu != null); // 确保已经放入表中
+        hash_table.remove(student.name); // 移除G
+        try std.testing.expect(hash_table.get(student.name) == null); // 此时已被删除
+    }
 }
