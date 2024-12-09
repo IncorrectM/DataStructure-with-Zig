@@ -50,7 +50,7 @@ export default withMermaid({
           { text: '栈Stack', link: './04_stack' },
           { text: '队列Queue', link: './05_queue' },
           { text: '哈希表Hash Table', link: './06_hash_table' },
-          { text: '总结和回顾', link: './07_summary' },
+          { text: '总结和回顾', link: './99_summary' },
         ]
       }
     ],

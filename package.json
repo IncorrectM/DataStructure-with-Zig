@@ -19,6 +19,7 @@
     "docz:04": "bun ./run_z_md.ts run ./docs/04_stack.z.md",
     "docz:05": "bun ./run_z_md.ts run ./docs/05_queue.z.md",
     "docz:06": "bun ./run_z_md.ts run ./docs/06_hash_table.z.md",
+    "docz:99": "bun ./run_z_md.ts run ./docs/99_summary.z.md",
     "docz:example": "bun ./run_z_md.ts run ./example.z.md"
   }
 }
