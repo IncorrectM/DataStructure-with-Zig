@@ -32,13 +32,15 @@ pub fn BinarySearchTree(T: type) type {
         const This = @This();
         const Node = BinarySearchTreeNode(T);
         allocator: std.mem.Allocator,
+        comparator: *const fn (T, T) i2,
         root: ?*Node,
 
-        pub fn init(root: T, allocator: std.mem.Allocator) !This {
+        pub fn init(root: T, comparator: *const fn (T, T) i2, allocator: std.mem.Allocator) !This {
             const root_node = try allocator.create(Node);
             root_node.* = Node.init(root);
             return .{
                 .allocator = allocator,
+                .comparator = comparator,
                 .root = root_node,
             };
         }
@@ -52,9 +54,18 @@ pub fn BinarySearchTree(T: type) type {
     };
 }
 
+pub fn comparei32(a: i32, b: i32) i2 {
+    if (a > b) {
+        return 1;
+    } else if (a < b) {
+        return -1;
+    }
+    return 0;
+}
+
 test "init and deinit" {
     const allocator = std.testing.allocator;
-    var tree = BinarySearchTree(i32).init(0, allocator) catch |e| {
+    var tree = BinarySearchTree(i32).init(0, &comparei32, allocator) catch |e| {
         std.debug.print("{}\n", .{e});
         return error.OOM;
     };
